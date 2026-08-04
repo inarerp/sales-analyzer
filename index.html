@@ -1,0 +1,2876 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دفتر — تحليل مبيعات المنصات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --ink: #16302A;
+    --ink-soft: #24443A;
+    --paper: #F8F6F0;
+    --paper-alt: #EFEAdd;
+    --paper-card: #FFFFFF;
+    --line: #D9D2BE;
+    --line-soft: #E7E2D2;
+    --accent: #C77D2E;
+    --accent-soft: #E9BD84;
+    --positive: #2F6B4F;
+    --danger: #A6402F;
+    --text: #1C241F;
+    --text-muted: #64705F;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(22,48,42,0.06), 0 8px 24px -12px rgba(22,48,42,0.18);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px);
+    background-size: 100% 42px;
+    color: var(--text);
+    font-family: 'Tajawal', sans-serif;
+    min-height: 100vh;
+    line-height: 1.55;
+  }
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+  }
+  .num{
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding: 10px 0 26px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 30px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark{
+    width:38px; height:38px;
+    border-radius:50%;
+    border: 2px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    color:var(--ink);
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .brand h1{
+    font-size: 20px;
+    margin:0;
+    font-weight:800;
+    color: var(--ink);
+    letter-spacing:.2px;
+  }
+  .brand p{
+    margin:0;
+    font-size:12.5px;
+    color:var(--text-muted);
+  }
+  .badge-ledger{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color: var(--text-muted);
+    border:1px dashed var(--line);
+    padding:5px 10px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+
+  /* ---------- Section shell ---------- */
+  .step{
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .step-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .step-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color: var(--accent);
+    font-weight:600;
+    border-bottom: 2px solid var(--accent-soft);
+    padding-bottom:2px;
+  }
+  .step-head h2{
+    font-size:16.5px;
+    margin:0;
+    font-weight:700;
+    color: var(--ink);
+  }
+  .step.disabled{ opacity:.45; pointer-events:none; }
+
+  /* ---------- Platform chips ---------- */
+  .platforms{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .chip{
+    border:1.5px solid var(--line);
+    background: var(--paper);
+    border-radius: 9px;
+    padding: 12px 18px;
+    cursor:pointer;
+    font-family:'Tajawal',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color: var(--text);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    min-width:110px;
+    transition: border-color .15s, background .15s, transform .1s;
+  }
+  .chip:hover{ border-color: var(--accent-soft); }
+  .chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .chip.active{
+    border-color: var(--ink);
+    background: var(--ink);
+    color: #fff;
+  }
+  .chip.soon{
+    cursor:not-allowed;
+    color: var(--text-muted);
+  }
+  .chip .tag{
+    font-size:10px;
+    font-family:'IBM Plex Mono', monospace;
+    color: var(--text-muted);
+    font-weight:500;
+  }
+  .chip.active .tag{ color: var(--accent-soft); }
+
+  /* ---------- Upload ---------- */
+  .dropzone{
+    border: 2px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 30px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color: var(--accent);
+    background: #FBF3E8;
+  }
+  .dropzone input{ display:none; }
+  .dropzone .icon{
+    font-size:26px;
+    margin-bottom:6px;
+  }
+  .dropzone .hint{
+    font-size:12.5px;
+    color: var(--text-muted);
+    margin-top:4px;
+  }
+  .file-status{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:13.5px;
+    padding:10px 14px;
+    border-radius:8px;
+  }
+  .file-status.ok{ background:#EAF3ED; color: var(--positive); }
+  .file-status.err{ background:#F7E9E5; color: var(--danger); }
+
+  /* ---------- Period selector ---------- */
+  .mode-toggle{
+    display:inline-flex;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .mode-toggle button{
+    border:none;
+    background: var(--paper);
+    padding:9px 18px;
+    font-family:'Tajawal',sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    color: var(--text-muted);
+  }
+  .mode-toggle button.active{
+    background: var(--ink);
+    color:#fff;
+  }
+  .period-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    align-items:flex-end;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field label{
+    font-size:12.5px;
+    color: var(--text-muted);
+    font-weight:600;
+  }
+  .field input, .field select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    padding:9px 10px;
+    border-radius:7px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    color: var(--text);
+    min-width:150px;
+  }
+  .field select{ font-family:'Tajawal',sans-serif; direction:rtl; }
+  .field input:focus, .field select:focus{
+    outline:2px solid var(--accent-soft);
+    outline-offset:1px;
+    border-color: var(--accent);
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    border-radius:9px;
+    padding:12px 26px;
+    border:none;
+    cursor:pointer;
+    transition: transform .08s, box-shadow .15s;
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn-primary{
+    background: var(--ink);
+    color:#fff;
+  }
+  .btn-primary:hover{ background: var(--ink-soft); }
+  .btn-primary:disabled{
+    background:#B9C2BB; cursor:not-allowed;
+  }
+  .btn-accent{
+    background: var(--accent);
+    color:#fff;
+  }
+  .btn-accent:hover{ filter:brightness(1.05); }
+  .btn-ghost{
+    background:transparent;
+    border:1.5px solid var(--line);
+    color: var(--text);
+  }
+
+  .msg-error{
+    margin-top:14px;
+    background:#F7E9E5;
+    border:1px solid #E3B7A9;
+    color: var(--danger);
+    padding:12px 16px;
+    border-radius:8px;
+    font-size:13.5px;
+    line-height:1.6;
+  }
+  .msg-note{
+    margin-top:12px;
+    background:#FBF3E8;
+    border:1px solid var(--accent-soft);
+    color:#7A5117;
+    padding:10px 14px;
+    border-radius:8px;
+    font-size:12.5px;
+  }
+
+  /* ---------- Summary ---------- */
+  .summary-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+    gap:14px;
+  }
+  .summary-card{
+    background: var(--paper);
+    border:1px solid var(--line-soft);
+    border-radius:9px;
+    padding:14px 16px;
+    position:relative;
+  }
+  .summary-card .label{
+    font-size:11.5px;
+    color: var(--text-muted);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .summary-card .value{
+    font-size:21px;
+    font-weight:600;
+    color: var(--ink);
+  }
+  .period-line{
+    font-size:13px;
+    color: var(--text-muted);
+    margin-bottom:16px;
+    padding-bottom:12px;
+    border-bottom:1px dashed var(--line);
+  }
+
+  /* signature: ledger stamp */
+  .stamp{
+    position:absolute;
+    top:-14px;
+    left:-10px;
+    width:56px; height:56px;
+    border-radius:50%;
+    border:2px dashed var(--positive);
+    color: var(--positive);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    font-weight:600;
+    transform: rotate(-14deg);
+    background: rgba(47,107,79,0.06);
+    text-align:center;
+    line-height:1.15;
+    animation: stampIn .35s ease-out;
+  }
+  @keyframes stampIn{
+    from{ transform: rotate(-14deg) scale(0.4); opacity:0; }
+    to{ transform: rotate(-14deg) scale(1); opacity:1; }
+  }
+  .excl-line{
+    margin-top:14px;
+    font-size:12px;
+    color: var(--text-muted);
+    display:flex; gap:18px; flex-wrap:wrap;
+  }
+
+  /* ---------- Table ---------- */
+  .table-scroll{
+    overflow-x:auto;
+    border:1px solid var(--line-soft);
+    border-radius:9px;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:520px;
+    font-size:13.5px;
+  }
+  thead th{
+    background: var(--ink);
+    color:#fff;
+    padding:11px 14px;
+    text-align:right;
+    font-weight:700;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+    position:sticky; top:0;
+  }
+  thead th .arrow{
+    font-size:10px;
+    margin-inline-start:4px;
+    opacity:.85;
+  }
+  tbody td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  tbody tr:nth-child(even){ background: #FBFAF6; }
+  tbody tr:hover{ background:#F3EEE0; }
+  .col-num{ text-align:left; }
+
+  .table-toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .row-count{
+    font-size:12.5px;
+    color:var(--text-muted);
+  }
+
+  footer.foot{
+    text-align:center;
+    color: var(--text-muted);
+    font-size:12px;
+    margin-top:34px;
+  }
+
+  /* ---------- Amazon dual upload ---------- */
+  .amazon-file-group{
+    margin-bottom:18px;
+  }
+  .amazon-file-group:last-child{ margin-bottom:0; }
+  .amazon-file-group h3{
+    font-size:13.5px;
+    margin:0 0 3px;
+    color: var(--ink);
+    font-weight:700;
+  }
+  .amazon-file-group .hint{
+    font-size:12px;
+    color: var(--text-muted);
+    margin:0 0 10px;
+  }
+  .platform-hint{
+    font-size:12.5px;
+    color: var(--text-muted);
+    margin-bottom:14px;
+  }
+
+  /* ---------- Trendyol multi-file list ---------- */
+  .file-list{
+    margin-top:14px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .file-list-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background: var(--paper);
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:13px;
+  }
+  .file-list-item.dup{
+    background:#FBF3E8;
+    border-color: var(--accent-soft);
+  }
+  .file-list-item .fname{
+    font-weight:600;
+    color: var(--ink);
+  }
+  .file-list-item .fmeta{
+    color: var(--text-muted);
+    font-size:12px;
+  }
+  .file-list-item .fremove{
+    background:transparent;
+    border:none;
+    color: var(--danger);
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    padding:4px 8px;
+    flex-shrink:0;
+  }
+  .file-list-item .fremove:hover{ text-decoration:underline; }
+
+  /* ---------- Sort preset ---------- */
+  .sort-select{
+    font-family:'Tajawal',sans-serif;
+    font-size:13px;
+    padding:8px 10px;
+    border-radius:7px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    color: var(--text);
+    direction:rtl;
+  }
+  .sort-select:focus{
+    outline:2px solid var(--accent-soft);
+    outline-offset:1px;
+    border-color: var(--accent);
+  }
+  .toolbar-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .toolbar-left label{
+    font-size:12.5px;
+    color: var(--text-muted);
+    font-weight:600;
+  }
+
+  /* ---------- Warning / disclosure ---------- */
+  .warn-box{
+    margin-top:14px;
+    background:#FBF3E8;
+    border:1px solid var(--accent-soft);
+    color:#7A5117;
+    padding:12px 16px;
+    border-radius:8px;
+    font-size:12.5px;
+    line-height:1.7;
+  }
+  .warn-box.severe{
+    background:#F7E9E5;
+    border-color:#E3B7A9;
+    color: var(--danger);
+  }
+  details.sku-list{
+    margin-top:8px;
+  }
+  details.sku-list summary{
+    cursor:pointer;
+    font-weight:600;
+    color: inherit;
+  }
+  details.sku-list .list-body{
+    margin-top:8px;
+    max-height:160px;
+    overflow-y:auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    background:rgba(255,255,255,0.5);
+    border-radius:6px;
+    padding:8px 10px;
+    direction:ltr;
+    text-align:left;
+  }
+
+  /* ---------- Search & Inspect ---------- */
+  #inspectSearchInput{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    width:100%;
+    direction:ltr;
+    text-align:right;
+  }
+  #inspectSearchInput:focus{
+    outline:2px solid var(--accent-soft);
+    outline-offset:1px;
+    border-color: var(--accent);
+  }
+  .inspect-matches{
+    margin-top:10px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    max-height:260px;
+    overflow-y:auto;
+  }
+  .inspect-match{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    background: var(--paper);
+    border:1px solid var(--line-soft);
+    border-radius:7px;
+    padding:9px 13px;
+    cursor:pointer;
+    font-size:13px;
+    text-align:right;
+  }
+  .inspect-match:hover{ border-color: var(--accent-soft); background:#FBF3E8; }
+  .inspect-match .im-key{ font-family:'IBM Plex Mono', monospace; font-weight:600; color: var(--ink); direction:ltr; }
+  .inspect-match .im-title{ color: var(--text-muted); font-size:12px; }
+  .inspect-match .im-count{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color: var(--text-muted); flex-shrink:0; }
+  .inspect-empty{ margin-top:10px; font-size:12.5px; color: var(--text-muted); }
+
+  .inspect-panel{
+    margin-top:18px;
+    border:1.5px solid var(--ink);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .inspect-panel-head{
+    background: var(--ink);
+    color:#fff;
+    padding:14px 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .inspect-panel-head h3{ margin:0 0 4px; font-size:15px; }
+  .inspect-panel-head .ip-sub{ font-size:12px; opacity:.85; }
+  .inspect-panel-body{ padding:18px; background:#fff; }
+  .inspect-copy-btn{
+    background: var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:7px;
+    padding:8px 14px;
+    font-family:'Tajawal',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .inspect-copy-btn:hover{ filter:brightness(1.05); }
+  .inspect-copy-btn.copied{ background: var(--positive); }
+
+  .inspect-steps{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    background: var(--paper);
+    border:1px dashed var(--line);
+    border-radius:8px;
+    padding:14px 16px;
+    line-height:2;
+  }
+  .inspect-steps .is-row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .inspect-steps .is-row.final{ font-weight:700; color: var(--ink); border-top:1px dashed var(--line); margin-top:6px; padding-top:8px; }
+  .inspect-steps .is-label{ color: var(--text-muted); }
+  .inspect-steps .is-row.final .is-label{ color: var(--ink); }
+
+  .inspect-rows-toggle summary{
+    cursor:pointer;
+    font-weight:700;
+    color: var(--ink);
+    margin-top:18px;
+    font-size:13.5px;
+  }
+  .inspect-table-scroll{
+    margin-top:10px;
+    overflow-x:auto;
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    max-height:420px;
+    overflow-y:auto;
+  }
+  table.inspect-table{ border-collapse:collapse; width:100%; min-width:640px; font-size:12.5px; }
+  table.inspect-table thead th{
+    background: var(--paper-alt);
+    color: var(--ink);
+    position:sticky; top:0;
+    padding:9px 10px;
+    text-align:right;
+    white-space:nowrap;
+    border-bottom:1.5px solid var(--line);
+  }
+  table.inspect-table tbody td{ padding:8px 10px; border-bottom:1px solid var(--line-soft); white-space:nowrap; }
+  table.inspect-table tbody tr.excluded{ background:#FBF4F1; }
+  table.inspect-table tbody tr.excluded:hover{ background:#F7E9E5; }
+  table.inspect-table tbody tr:not(.excluded):hover{ background:#F3EEE0; }
+  .included-badge{ font-weight:700; }
+  .included-badge.yes{ color: var(--positive); }
+  .included-badge.no{ color: var(--danger); }
+  .exclusion-reason{ color: var(--danger); font-size:11.5px; }
+
+  @media (max-width: 640px){
+    .step{ padding:16px; }
+    thead th, tbody td{ padding:8px 10px; font-size:12.5px; }
+    .brand h1{ font-size:17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">دم</div>
+      <div>
+        <h1>دفتر المبيعات</h1>
+        <p>تحليل ملفات مبيعات المنصات — يعمل بالكامل داخل متصفحك</p>
+      </div>
+    </div>
+    <div class="badge-ledger">لا تخزين • لا حسابات • خصوصية كاملة</div>
+  </header>
+
+  <!-- STEP 1: platform -->
+  <section class="step">
+    <div class="step-head"><span class="step-num">01</span><h2>اختر المنصة</h2></div>
+    <div class="platforms" id="platformChips"></div>
+  </section>
+
+  <!-- STEP 2: upload -->
+  <section class="step" id="stepUpload">
+    <div class="step-head"><span class="step-num">02</span><h2>ارفع ملف/ملفات المبيعات</h2></div>
+
+    <!-- Noon: single file -->
+    <div id="noonUploadBlock">
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept=".csv,.xlsx" />
+        <div class="icon">⬆</div>
+        <div><strong>اسحب الملف هنا أو اضغط للاختيار</strong></div>
+        <div class="hint">الصيغ المدعومة: CSV، XLSX — الأعمدة المطلوبة: Transaction Date, SKUs, Title, Net Proceeds, Transaction Type</div>
+      </div>
+      <div id="fileStatus"></div>
+    </div>
+
+    <!-- Amazon: two files -->
+    <div id="amazonUploadBlock" style="display:none;">
+      <p class="platform-hint">نوع التحليل الحالي: <strong>المبيعات — Order</strong> فقط (لا تُحتسب المرتجعات أو الرسوم أو أي معاملات أخرى ضمن هذه النتيجة).</p>
+      <div class="amazon-file-group">
+        <h3>الملف الأول — ملف ربط المنتجات (Business Report)</h3>
+        <p class="hint">يُستخدم لربط SKU بالـChild ASIN. الأعمدة المطلوبة: SKU، ASIN (المنتج الفرعي).</p>
+        <div class="dropzone" id="dropzoneAmzBiz">
+          <input type="file" id="fileInputAmzBiz" accept=".csv,.xlsx" />
+          <div class="icon">⬆</div>
+          <div><strong>اسحب ملف Business Report هنا أو اضغط للاختيار</strong></div>
+          <div class="hint">CSV أو XLSX</div>
+        </div>
+        <div id="fileStatusAmzBiz"></div>
+      </div>
+      <div class="amazon-file-group">
+        <h3>الملف الثاني — ملف المبيعات (Custom Transaction Report)</h3>
+        <p class="hint">يحتوي على date/time، sku، quantity، وproduct sales. يتم اكتشاف صف العناوين تلقائيًا حتى لو سبقته أسطر Metadata.</p>
+        <div class="dropzone" id="dropzoneAmzTxn">
+          <input type="file" id="fileInputAmzTxn" accept=".csv,.xlsx" />
+          <div class="icon">⬆</div>
+          <div><strong>اسحب ملف Custom Transaction هنا أو اضغط للاختيار</strong></div>
+          <div class="hint">CSV أو XLSX</div>
+        </div>
+        <div id="fileStatusAmzTxn"></div>
+      </div>
+    </div>
+
+    <!-- Trendyol: any number of files, merged before analysis -->
+    <div id="trendyolUploadBlock" style="display:none;">
+      <p class="platform-hint">يمكنك رفع أكثر من ملف (مثلاً أبريل + مايو، ثم يونيو + يوليو) — سيتم دمج كل صفوف الملفات وتحليلها كتقرير واحد.</p>
+      <div class="dropzone" id="dropzoneTrendyol">
+        <input type="file" id="fileInputTrendyol" accept=".csv,.xlsx" multiple />
+        <div class="icon">⬆</div>
+        <div><strong>اسحب ملف أو أكثر من ملفات Trendyol هنا أو اضغط للاختيار</strong></div>
+        <div class="hint">الأعمدة المطلوبة: Model code, Product name, Net items sold, Net sales, Discount amount (وتُعرض Barcode, Category, Brand تلقائيًا إن وُجدت في الملف)</div>
+      </div>
+      <div id="trendyolFileList"></div>
+    </div>
+  </section>
+
+  <!-- STEP 3: period -->
+  <section class="step disabled" id="stepPeriod">
+    <div class="step-head"><span class="step-num">03</span><h2 id="stepPeriodTitle">حدد فترة التحليل</h2></div>
+
+    <div id="periodSelectionFields">
+      <div class="mode-toggle">
+        <button type="button" id="modeDateBtn" class="active">نطاق تاريخ</button>
+        <button type="button" id="modeMonthBtn">نطاق شهور</button>
+      </div>
+
+      <div id="dateModeFields" class="period-row">
+        <div class="field">
+          <label for="dateFrom">من تاريخ</label>
+          <input type="date" id="dateFrom">
+        </div>
+        <div class="field">
+          <label for="dateTo">إلى تاريخ</label>
+          <input type="date" id="dateTo">
+        </div>
+      </div>
+
+      <div id="monthModeFields" class="period-row" style="display:none;">
+        <div class="field">
+          <label for="monthFrom">من شهر</label>
+          <select id="monthFrom"></select>
+        </div>
+        <div class="field">
+          <label for="monthTo">إلى شهر</label>
+          <select id="monthTo"></select>
+        </div>
+      </div>
+    </div>
+
+    <p id="trendyolPeriodNote" class="platform-hint" style="display:none;">لا يوجد فلتر فترة هنا — سيتم تحليل كل الصفوف الموجودة في الملف/الملفات التي رفعتها كما هي (الفترة هي ما اخترته عند التصدير من Trendyol).</p>
+
+    <div style="margin-top:20px;">
+      <button class="btn btn-primary" id="analyzeBtn" disabled>تحليل المبيعات</button>
+    </div>
+    <div id="analyzeError"></div>
+  </section>
+
+  <!-- STEP 4: summary -->
+  <section class="step" id="stepSummary" style="display:none;">
+    <div class="step-head"><span class="step-num">04</span><h2>ملخص التحليل</h2></div>
+    <div class="period-line" id="periodLine"></div>
+    <div class="summary-grid" id="summaryGrid"></div>
+    <div class="excl-line" id="exclLine"></div>
+    <div id="platformWarnings"></div>
+  </section>
+
+  <!-- STEP: Search & Inspect (debug/verification tool, generic across all analyzers) -->
+  <section class="step" id="stepInspect" style="display:none;">
+    <div class="step-head"><span class="step-num">🔍</span><h2>Search &amp; Inspect</h2></div>
+    <p class="platform-hint">ابحث بـ SKU، أو جزء من اسم المنتج، أو رقم الطلب — لمعرفة بالتفصيل كيف وصلت الأداة للنتيجة النهائية لهذا العنصر تحديدًا. هذه أداة تحقق فقط ولا تغيّر أي رقم في النتائج أعلاه.</p>
+    <div class="field" style="max-width:420px;">
+      <input type="text" id="inspectSearchInput" placeholder="ابحث بـ SKU / اسم المنتج / رقم الطلب..." autocomplete="off">
+    </div>
+    <div id="inspectMatches"></div>
+    <div id="inspectPanel"></div>
+  </section>
+
+  <!-- STEP 5: table -->
+  <section class="step" id="stepTable" style="display:none;">
+    <div class="step-head"><span class="step-num">05</span><h2>نتائج التحليل</h2></div>
+    <div class="table-toolbar">
+      <div class="toolbar-left">
+        <span class="row-count" id="rowCount"></span>
+        <label for="sortPreset">ترتيب النتائج حسب:</label>
+        <select class="sort-select" id="sortPreset">
+          <option value="qty_desc">الأكثر مبيعًا — عدد القطع</option>
+          <option value="value_desc">الأعلى مبيعات — القيمة</option>
+          <option value="qty_asc">الأقل مبيعًا — عدد القطع</option>
+          <option value="value_asc">الأقل مبيعات — القيمة</option>
+        </select>
+      </div>
+      <button class="btn btn-accent" id="exportBtn">⬇ تنزيل Excel</button>
+    </div>
+    <div class="table-scroll">
+      <table id="resultsTable">
+        <thead id="resultsHead"></thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">تتم كل المعالجة محليًا داخل المتصفح — لا يتم رفع أي بيانات إلى أي خادم.</footer>
+</div>
+
+<script>
+/* =========================================================================
+   PLATFORM REGISTRY
+   Adding a new platform later = adding a new entry + analyzer module,
+   without touching Noon's logic.
+   ========================================================================= */
+const PLATFORMS = {
+  noon: {
+    id: 'noon',
+    name: 'Noon',
+    available: true,
+    requiredColumns: ['Transaction Date', 'SKUs', 'Title', 'Net Proceeds', 'Transaction Type'],
+    dateColumn: 'Transaction Date',
+  },
+  amazon: {
+    id: 'amazon',
+    name: 'Amazon',
+    available: true,
+    requiredBusinessColumns: ['SKU', 'Child ASIN'],
+    requiredTransactionColumns: ['date/time', 'sku', 'quantity', 'product sales', 'type'],
+    timezone: 'Asia/Riyadh',
+    // V1 only analyzes "Order" rows (real sales). Kept as an array/Set rather
+    // than a hardcoded condition so a future version can pass more than one
+    // type (e.g. ['Order','Refund']) without touching AmazonAnalyzer itself.
+    selectedTransactionTypes: ['Order'],
+  },
+  trendyol: {
+    id: 'trendyol',
+    name: 'Trendyol',
+    available: true,
+    requiredColumns: ['Model code', 'Product name', 'Net items sold', 'Net sales', 'Discount amount'],
+    // The real file is a workbook with 3 report sheets; this is the one we need.
+    preferredSheetNames: ['sales-by-product-report'],
+    multiFile: true, // Trendyol accepts any number of files, merged before analysis
+  },
+  carrefour: { id:'carrefour', name:'Carrefour', available:false },
+  shein:     { id:'shein',     name:'SHEIN',     available:false },
+};
+const PLATFORM_ORDER = ['noon','amazon','trendyol','carrefour','shein'];
+
+/* =========================================================================
+   RESULT VIEW CONFIG
+   Describes how each platform's aggregated results should be rendered in
+   the table and exported to Excel — column keys, labels, and which numeric
+   fields represent "quantity" and "value" for the unified sort dropdown.
+   Adding a platform later = adding an entry here + an Analyzer module.
+   ========================================================================= */
+const RESULT_VIEWS = {
+  noon: {
+    columns: [
+      { key:'sku',   label:'SKU',   type:'text' },
+      { key:'title', label:'Title', type:'text' },
+      { key:'qty',   label:'الكمية المباعة',        type:'int' },
+      { key:'net',   label:'إجمالي Net Proceeds',   type:'dec' },
+    ],
+    qtyKey: 'qty',
+    valueKey: 'net',
+    sheetName: 'تحليل المبيعات',
+    resultNoun: 'منتج',
+  },
+  amazon: {
+    columns: [
+      { key:'asin',  label:'ASIN',  type:'text' },
+      { key:'title', label:'Title', type:'text' },
+      { key:'qty',   label:'الكمية المباعة',   type:'int' },
+      { key:'sales', label:'إجمالي المبيعات',  type:'dec' },
+    ],
+    qtyKey: 'qty',
+    valueKey: 'sales',
+    sheetName: 'تحليل المبيعات',
+    resultNoun: 'ASIN',
+  },
+  trendyol: {
+    columns: [
+      { key:'barcode',   label:'Barcode',      type:'text' },
+      { key:'title',     label:'Product name', type:'text' },
+      { key:'modelCode', label:'Model code',   type:'text' },
+      { key:'category',  label:'Category',     type:'text' },
+      { key:'brand',     label:'Brand',        type:'text' },
+      { key:'qty',       label:'الكمية المباعة',        type:'int' },
+      { key:'sales',     label:'إجمالي Business Sales', type:'dec' },
+    ],
+    qtyKey: 'qty',
+    valueKey: 'sales',
+    sheetName: 'تحليل المبيعات',
+    resultNoun: 'منتج',
+  },
+};
+
+/* =========================================================================
+   UTILITIES
+   ========================================================================= */
+function formatNumber(n, decimals=2){
+  return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+// Build a UTC day-timestamp from y/m/d (month is 1-based here)
+function utcDay(y, m, d){ return Date.UTC(y, m-1, d); }
+
+// Parse a date string in one of the formats seen in real Noon exports:
+//   - "M/D/YYYY" or "MM/DD/YYYY" (slash, month-first)
+//   - "YYYY-MM-DD" (ISO, dash)
+// Returns {y,m,d} or null if it matches neither.
+function parseDateString(str){
+  if (typeof str !== 'string') return null;
+  const s = str.trim();
+
+  // ISO: YYYY-MM-DD (unambiguous, checked first)
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m){
+    const year = parseInt(m[1],10), month = parseInt(m[2],10), day = parseInt(m[3],10);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return { y: year, m: month, d: day };
+  }
+
+  // Slash: M/D/YYYY
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m){
+    let month = parseInt(m[1],10), day = parseInt(m[2],10), year = parseInt(m[3],10);
+    if (year < 100) year += 2000;
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return { y: year, m: month, d: day };
+  }
+
+  return null;
+}
+
+// Normalize a cell value (string, JS Date from SheetJS, or Excel serial) to a UTC day timestamp, or null if invalid
+function normalizeDateCell(value){
+  if (value === null || value === undefined || value === '') return null;
+  if (value instanceof Date && !isNaN(value)){
+    return utcDay(value.getFullYear(), value.getMonth()+1, value.getDate());
+  }
+  if (typeof value === 'number'){
+    // Excel serial date fallback
+    const d = XLSX.SSF.parse_date_code(value);
+    if (!d) return null;
+    return utcDay(d.y, d.m, d.d);
+  }
+  const parsed = parseDateString(String(value));
+  if (!parsed) return null;
+  return utcDay(parsed.y, parsed.m, parsed.d);
+}
+
+// Safely parse Net Proceeds-like numeric strings/numbers -> number or null if unparseable
+function parseNumericCell(value){
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return isNaN(value) ? null : value;
+  let s = String(value).trim();
+  if (s === '') return null;
+  s = s.replace(/,/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+// Case/whitespace-insensitive column name lookup: returns the ACTUAL header
+// string found in `headers` matching `name`, or null. Used so analyzers don't
+// break if a platform export capitalizes a column slightly differently.
+function resolveColumnCI(headers, name){
+  const target = name.trim().toLowerCase();
+  const found = headers.find(h => String(h).trim().toLowerCase() === target);
+  return found !== undefined ? found : null;
+}
+
+// Shared trace-entry shape for the "Search & Inspect" debug feature. Every
+// analyzer builds an array of these (one per input row) alongside its normal
+// results/stats — purely additive, never read by the aggregation logic
+// itself, so it can't affect real results. A new marketplace just needs to
+// populate this same shape to get full Search & Inspect support for free.
+function makeTraceEntry(rowIndex, searchKey, title, orderId, fields, passedSteps, included, exclusionReason, qtyContribution, salesContribution){
+  return { rowIndex, searchKey, title, orderId, fields, passedSteps, included, exclusionReason, qtyContribution, salesContribution };
+}
+
+/* =========================================================================
+   NOON ANALYZER MODULE
+   ========================================================================= */
+const NoonAnalyzer = {
+  validateColumns(headers){
+    const required = PLATFORMS.noon.requiredColumns;
+    const headerSet = new Set(headers.map(h => String(h).trim()));
+    const missing = required.filter(col => !headerSet.has(col));
+    return { valid: missing.length === 0, missing };
+  },
+
+  // rows: array of objects keyed by header name
+  // range: { startTs, endTs } UTC day timestamps, inclusive
+  analyze(rows, range){
+    const stats = {
+      totalRows: rows.length,
+      inRangeRows: 0,
+      invalidDateRows: 0,
+      noSkuExcludedRows: 0,
+      nonOrderExcludedRows: 0,
+      invalidNetProceedsRows: 0,
+      negativeExcludedRows: 0,
+    };
+
+    const groups = new Map(); // key: sku+"||"+title -> { sku, title, qty, net }
+    const traceEntries = [];
+    const traceSteps = ['التاريخ داخل الفترة', 'SKU غير فارغ', 'Transaction Type = order', 'Net Proceeds > 0'];
+
+    for (let i = 0; i < rows.length; i++){
+      const row = rows[i];
+      const rowNumber = i + 1;
+
+      // Read-only display fields for the trace — never used by the actual
+      // filtering/aggregation logic below, so they can't affect it.
+      const skuDisplay = row['SKUs'] !== undefined && row['SKUs'] !== null ? String(row['SKUs']).trim() : '';
+      const titleDisplay = row['Title'] !== undefined && row['Title'] !== null ? String(row['Title']).trim() : '';
+      const orderIdDisplay = row['Order Nr'] !== undefined && row['Order Nr'] !== null ? String(row['Order Nr']).trim() : '';
+      const traceFields = [
+        { label:'Date', value: row['Transaction Date'] !== undefined && row['Transaction Date'] !== null ? String(row['Transaction Date']) : '' },
+        { label:'Transaction Type', value: row['Transaction Type'] !== undefined && row['Transaction Type'] !== null ? String(row['Transaction Type']) : '' },
+        { label:'Net Proceeds', value: row['Net Proceeds'] !== undefined && row['Net Proceeds'] !== null ? String(row['Net Proceeds']) : '' },
+        { label:'Order ID', value: orderIdDisplay },
+      ];
+
+      // Step 1: date filter
+      const ts = normalizeDateCell(row['Transaction Date']);
+      if (ts === null){
+        stats.invalidDateRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, titleDisplay, orderIdDisplay, traceFields, 0, false, 'تاريخ غير صالح (Invalid date)', 0, 0));
+        continue;
+      }
+      if (ts < range.startTs || ts > range.endTs){
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, titleDisplay, orderIdDisplay, traceFields, 0, false, 'خارج الفترة المختارة (Outside selected date)', 0, 0));
+        continue;
+      }
+      stats.inRangeRows++;
+
+      // Step 2: SKU presence
+      const sku = row['SKUs'] !== undefined && row['SKUs'] !== null ? String(row['SKUs']).trim() : '';
+      if (!sku){
+        stats.noSkuExcludedRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, titleDisplay, orderIdDisplay, traceFields, 1, false, 'SKU فارغ (Empty SKU)', 0, 0));
+        continue;
+      }
+
+      // Step 3: Transaction Type must be "order" — everything else
+      // (order_update, refund, cancellation, statement_fee, payment,
+      // balance_transfer, ...) is excluded here, BEFORE the Net Proceeds
+      // check. This matters because some non-order rows (e.g. order_update)
+      // carry Net Proceeds = 0, which would otherwise slip past the
+      // negative-value filter and get counted as a sold unit.
+      const txnType = row['Transaction Type'] !== undefined && row['Transaction Type'] !== null
+        ? String(row['Transaction Type']).trim().toLowerCase() : '';
+      if (txnType !== 'order'){
+        stats.nonOrderExcludedRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, titleDisplay, orderIdDisplay, traceFields, 2, false, `Transaction Type != order (كانت: ${row['Transaction Type'] || '(فارغة)'})`, 0, 0));
+        continue;
+      }
+
+      // Step 4: Net Proceeds parsing + negative exclusion
+      const net = parseNumericCell(row['Net Proceeds']);
+      if (net === null){
+        stats.invalidNetProceedsRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, titleDisplay, orderIdDisplay, traceFields, 3, false, 'Net Proceeds غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+      if (net <= 0){
+        stats.negativeExcludedRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, titleDisplay, orderIdDisplay, traceFields, 3, false, 'Net Proceeds <= 0', 0, 0));
+        continue;
+      }
+
+      // Step 5: group by SKU + Title
+      const title = row['Title'] !== undefined && row['Title'] !== null ? String(row['Title']).trim() : '';
+      const key = sku + '||' + title;
+      if (!groups.has(key)) groups.set(key, { sku, title, qty:0, net:0 });
+      const g = groups.get(key);
+      g.qty += 1;
+      g.net += net;
+
+      traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, titleDisplay, orderIdDisplay, traceFields, 4, true, null, 1, net));
+    }
+
+    const results = Array.from(groups.values());
+    return { results, stats, trace: { steps: traceSteps, entries: traceEntries } };
+  }
+};
+
+/* =========================================================================
+   AMAZON ANALYZER MODULE
+   Two-stage pipeline:
+     1) Business Report  -> SKU -> Child ASIN mapping (clean vs conflicting)
+     2) Custom Transaction Report -> filtered by Saudi-local date, matched to
+        ASIN via the mapping, aggregated by Child ASIN.
+   ========================================================================= */
+const MONTHS_EN_ABBR = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+// Metadata registry for Amazon "type" column values. This is NOT an exhaustive
+// list invented in advance — every entry here was confirmed against the real
+// test file (36,770 rows) before being added. Meanings marked uncertain:true
+// are plausible interpretations, not confirmed from Amazon documentation.
+// A future multi-select UI can read this registry directly instead of the
+// analyzer needing to know about type-specific UI concerns.
+const AMAZON_TRANSACTION_TYPES = {
+  'Order':              { label: 'المبيعات (Order)',          description: 'معاملات بيع المنتجات — الطلبات الفعلية.', uncertain: false },
+  'Refund':              { label: 'المرتجعات (Refund)',         description: 'مبالغ مرتبطة برد قيمة الطلبات أو المنتجات للعملاء.', uncertain: false },
+  'Adjustment':          { label: 'تسويات (Adjustment)',        description: 'تعديلات مالية من Amazon على الحساب (سبب كل حالة تحديدًا غير مؤكد من الملف وحده).', uncertain: true },
+  'Transfer':            { label: 'تحويلات (Transfer)',         description: 'تحويل رصيد الحساب إلى حساب البائع البنكي.', uncertain: true },
+  'Service Fee':         { label: 'رسوم خدمة (Service Fee)',    description: 'رسوم خدمات عامة من Amazon (مثل رسوم الاشتراك)، غير مؤكدة التفاصيل من الملف وحده.', uncertain: true },
+  'FBA Inventory Fee':   { label: 'رسوم مخزون FBA',             description: 'رسوم متعلقة بتخزين أو معالجة مخزون Fulfillment by Amazon.', uncertain: true },
+  'Shipping Services':   { label: 'خدمات شحن',                  description: 'معاملة متعلقة بخدمات الشحن، تفاصيلها الدقيقة غير مؤكدة من الملف وحده.', uncertain: true },
+  'Others':              { label: 'أخرى (Others)',              description: 'معاملات غير مصنّفة ضمن الأنواع الأخرى.', uncertain: true },
+};
+
+const AmazonAnalyzer = {
+  // Isolated here so a future non-Saudi Amazon marketplace only needs a new
+  // offset (or a proper IANA lookup) without touching the rest of the pipeline.
+  RIYADH_OFFSET_MINUTES: 180, // Asia/Riyadh = UTC+3, no daylight saving
+
+  // ---- Business Report (SKU -> Child ASIN mapping) ----
+  resolveBusinessColumns(headers){
+    const skuCol = resolveColumnCI(headers, 'SKU');
+    // Prefer an explicit "child ASIN" style column name; several locales/exports
+    // use different labels. Fall back to column B (index 1), as that is where
+    // Amazon places "ASIN (المنتج الفرعي)" / "(Child) ASIN" in this report type.
+    const asinCandidates = ['asin (المنتج الفرعي)', '(child) asin', 'child asin', 'asin(child)'];
+    let asinCol = null;
+    for (const cand of asinCandidates){
+      asinCol = resolveColumnCI(headers, cand);
+      if (asinCol) break;
+    }
+    let asinColViaFallback = false;
+    if (!asinCol && headers.length > 1){ asinCol = headers[1]; asinColViaFallback = true; }
+
+    // Optional — Business Report's real job is the SKU->ASIN mapping, not
+    // titles. This is only ever used as a fallback display title (see
+    // buildMapping / analyze) when the transaction report itself has none.
+    const titleCandidates = ['العنوان', 'title', 'item name', 'product name', 'product title'];
+    let titleCol = null;
+    for (const cand of titleCandidates){
+      titleCol = resolveColumnCI(headers, cand);
+      if (titleCol) break;
+    }
+
+    return { skuCol, asinCol, asinColViaFallback, titleCol };
+  },
+
+  // ASINs are 10-character alphanumeric identifiers (almost always starting
+  // with "B0" in practice). Only enforced when we had to fall back to a
+  // positional column guess — a named column match is trusted as-is.
+  looksLikeAsin(value){
+    return /^[A-Z0-9]{10}$/.test(String(value || '').trim());
+  },
+
+  validateBusinessReport(headers, rows){
+    const { skuCol, asinCol, asinColViaFallback, titleCol } = this.resolveBusinessColumns(headers);
+    const missing = [];
+    if (!skuCol) missing.push('SKU');
+    if (!asinCol) missing.push('Child ASIN');
+    if (missing.length > 0) return { valid: false, missing, skuCol, asinCol, titleCol };
+
+    if (asinColViaFallback){
+      const sample = (rows || []).slice(0, 200).map(r => String(r[asinCol] || '').trim()).filter(v => v !== '');
+      const validCount = sample.filter(v => this.looksLikeAsin(v)).length;
+      const ratio = sample.length ? validCount / sample.length : 0;
+      if (sample.length === 0 || ratio < 0.8){
+        return {
+          valid: false,
+          missing: ['Child ASIN (لم يتم العثور على عمود بالاسم المتوقع، والعمود البديل (B) لا يحتوي على قيم تشبه ASIN فعليًا)'],
+          skuCol, asinCol, titleCol,
+        };
+      }
+    }
+    return { valid: true, missing: [], skuCol, asinCol, titleCol };
+  },
+
+  // Returns { clean: Map(sku->asin), conflicts: Map(sku->[asin,...]),
+  //           asinFallbackTitles: Map(asin->title) }
+  // `titleCol` is optional — Business Report's core job is the SKU->ASIN
+  // mapping; title is only ever a fallback used when the transaction report
+  // itself has none for a given ASIN (see analyze()).
+  buildMapping(rows, skuCol, asinCol, titleCol){
+    const seen = new Map(); // sku -> Set(asin)
+    const businessTitles = new Map(); // sku -> title
+    for (const row of rows){
+      const sku = row[skuCol] !== undefined && row[skuCol] !== null ? String(row[skuCol]).trim() : '';
+      const asin = row[asinCol] !== undefined && row[asinCol] !== null ? String(row[asinCol]).trim() : '';
+      if (sku && titleCol){
+        const t = row[titleCol] !== undefined && row[titleCol] !== null ? String(row[titleCol]).trim() : '';
+        if (t && !businessTitles.has(sku)) businessTitles.set(sku, t);
+      }
+      if (!sku || !asin) continue;
+      if (!seen.has(sku)) seen.set(sku, new Set());
+      seen.get(sku).add(asin);
+    }
+    const clean = new Map();
+    const conflicts = new Map();
+    for (const [sku, asinSet] of seen.entries()){
+      if (asinSet.size === 1) clean.set(sku, [...asinSet][0]);
+      else conflicts.set(sku, [...asinSet]);
+    }
+    // Precompute one fallback title per ASIN (first clean-mapped SKU that has a
+    // Business Report title wins) so analyze() doesn't need to search per row.
+    const asinFallbackTitles = new Map();
+    for (const [sku, asinVal] of clean.entries()){
+      if (!asinFallbackTitles.has(asinVal)){
+        const t = businessTitles.get(sku);
+        if (t) asinFallbackTitles.set(asinVal, t);
+      }
+    }
+    return { clean, conflicts, businessTitles, asinFallbackTitles };
+  },
+
+  // ---- Custom Transaction Report ----
+  // The real header row is preceded by an unpredictable number of metadata
+  // lines, so we detect it by scanning for a row containing all required
+  // column names, rather than assuming a fixed number of lines to skip.
+  detectTransactionHeaderRow(aoa){
+    const required = PLATFORMS.amazon.requiredTransactionColumns;
+    const scanLimit = Math.min(aoa.length, 50);
+    for (let i = 0; i < scanLimit; i++){
+      const cells = (aoa[i] || []).map(c => String(c).trim().toLowerCase());
+      const hasAll = required.every(col => cells.includes(col));
+      if (hasAll) return i;
+    }
+    return -1;
+  },
+
+  validateTransactionColumns(headers){
+    const required = PLATFORMS.amazon.requiredTransactionColumns;
+    const colMap = {};
+    const missing = [];
+    for (const col of required){
+      const resolved = resolveColumnCI(headers, col);
+      if (!resolved) missing.push(col); else colMap[col] = resolved;
+    }
+    // Optional — this is the PRIMARY title source when present (see analyze()).
+    // Amazon's Custom Transaction Report calls this column "description".
+    const descCol = resolveColumnCI(headers, 'description') || resolveColumnCI(headers, 'title');
+    if (descCol) colMap['description'] = descCol;
+    // Optional — used only for the Search & Inspect debug feature (search/display by order id).
+    const orderIdCol = resolveColumnCI(headers, 'order id');
+    if (orderIdCol) colMap['order id'] = orderIdCol;
+    return { valid: missing.length === 0, missing, colMap };
+  },
+
+  // Parse "31 Mar 2026 9:02:24 PM UTC" -> epoch ms (UTC), or null if it doesn't match.
+  parseAmazonTimestamp(str){
+    if (typeof str !== 'string') return null;
+    const m = str.trim().match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)\s+UTC$/i);
+    if (!m) return null;
+    const day = parseInt(m[1], 10);
+    const monthIdx = MONTHS_EN_ABBR.indexOf(m[2].toLowerCase());
+    if (monthIdx === -1) return null;
+    const year = parseInt(m[3], 10);
+    let hour = parseInt(m[4], 10) % 12;
+    const minute = parseInt(m[5], 10);
+    const second = parseInt(m[6], 10);
+    if (m[7].toUpperCase() === 'PM') hour += 12;
+    if (day < 1 || day > 31) return null;
+    return Date.UTC(year, monthIdx, day, hour, minute, second);
+  },
+
+  // Convert a UTC epoch-ms moment to its Saudi-local calendar day (as a UTC-day timestamp,
+  // consistent with the rest of the app's date-range comparisons).
+  toRiyadhLocalDay(utcMs){
+    const shifted = new Date(utcMs + this.RIYADH_OFFSET_MINUTES * 60000);
+    return utcDay(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate());
+  },
+
+  // rows: transaction rows (objects keyed by their real header names)
+  // colMap: { 'date/time':actualHeader, 'sku':actualHeader, 'quantity':actualHeader, 'product sales':actualHeader, 'type':actualHeader }
+  // mapping: { clean, conflicts } from buildMapping()
+  // range: { startTs, endTs } UTC-day timestamps (inclusive), same shape Noon uses
+  // selectedTypes: iterable of transaction-type strings to keep (V1: ['Order']).
+  //   Kept as a parameter (not a hardcoded `type === 'Order'` check) so a future
+  //   multi-select UI can pass more than one type without changing this method.
+  analyze(rows, colMap, mapping, range, selectedTypes){
+    const typeSet = new Set(selectedTypes || ['Order']);
+    const stats = {
+      totalRows: rows.length,
+      inRangeRows: 0,           // within the selected period, before the type filter
+      typeMatchedRows: 0,       // within period AND type is in selectedTypes
+      typeExcludedRows: 0,      // within period but type NOT in selectedTypes
+      invalidDateRows: 0,
+      invalidQuantityRows: 0,
+      invalidSalesRows: 0,
+      unmatchedRows: 0,
+      unmatchedQty: 0,
+      unmatchedSales: 0,
+      unmatchedSkuSet: new Set(),
+      conflictRows: 0,
+      conflictQty: 0,
+      conflictSales: 0,
+      conflictSkuSet: new Set(),
+    };
+
+    const groups = new Map(); // asin -> { asin, qty, sales }
+    const traceEntries = [];
+    const traceSteps = ['التاريخ داخل الفترة (بتوقيت الرياض)', 'Transaction Type ضمن الأنواع المختارة', 'Quantity صالحة', 'Product Sales صالحة', 'SKU مرتبط بـASIN بدون تعارض'];
+
+    for (let i = 0; i < rows.length; i++){
+      const row = rows[i];
+      const rowNumber = i + 1;
+
+      const skuDisplay = row[colMap['sku']] !== undefined && row[colMap['sku']] !== null ? String(row[colMap['sku']]).trim() : '';
+      const descDisplay = colMap['description'] && row[colMap['description']] !== undefined && row[colMap['description']] !== null
+        ? String(row[colMap['description']]).trim() : '';
+      const orderIdDisplay = row[colMap['order id']] !== undefined && row[colMap['order id']] !== null ? String(row[colMap['order id']]).trim() : '';
+      const traceFields = [
+        { label:'Date', value: row[colMap['date/time']] !== undefined && row[colMap['date/time']] !== null ? String(row[colMap['date/time']]) : '' },
+        { label:'Transaction Type', value: row[colMap['type']] !== undefined && row[colMap['type']] !== null ? String(row[colMap['type']]) : '' },
+        { label:'Quantity', value: row[colMap['quantity']] !== undefined && row[colMap['quantity']] !== null ? String(row[colMap['quantity']]) : '' },
+        { label:'Product Sales', value: row[colMap['product sales']] !== undefined && row[colMap['product sales']] !== null ? String(row[colMap['product sales']]) : '' },
+        { label:'Order ID', value: orderIdDisplay },
+      ];
+
+      const utcMs = this.parseAmazonTimestamp(row[colMap['date/time']]);
+      if (utcMs === null){
+        stats.invalidDateRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 0, false, 'تاريخ/وقت غير صالح', 0, 0));
+        continue;
+      }
+      const localDay = this.toRiyadhLocalDay(utcMs);
+      if (localDay < range.startTs || localDay > range.endTs){
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 0, false, 'خارج الفترة المختارة (Outside selected date)', 0, 0));
+        continue;
+      }
+      stats.inRangeRows++;
+
+      const txnType = row[colMap['type']] !== undefined && row[colMap['type']] !== null ? String(row[colMap['type']]).trim() : '';
+      if (!typeSet.has(txnType)){
+        stats.typeExcludedRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 1, false, `Transaction Type != ${[...typeSet].join('/')} (كانت: ${txnType || '(فارغة)'})`, 0, 0));
+        continue;
+      }
+      stats.typeMatchedRows++;
+
+      const qty = parseNumericCell(row[colMap['quantity']]);
+      if (qty === null){
+        stats.invalidQuantityRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 2, false, 'Quantity غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+      const sales = parseNumericCell(row[colMap['product sales']]);
+      if (sales === null){
+        stats.invalidSalesRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 3, false, 'Product Sales غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+
+      const sku = row[colMap['sku']] !== undefined && row[colMap['sku']] !== null ? String(row[colMap['sku']]).trim() : '';
+
+      if (sku && mapping.conflicts.has(sku)){
+        stats.conflictRows++;
+        stats.conflictQty += qty;
+        stats.conflictSales += sales;
+        stats.conflictSkuSet.add(sku);
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 4, false, `SKU مرتبط بأكثر من ASIN مختلف (Mapping Conflict): ${[...mapping.conflicts.get(sku)].join(', ')}`, 0, 0));
+        continue;
+      }
+
+      const asin = sku ? mapping.clean.get(sku) : undefined;
+      if (!asin){
+        stats.unmatchedRows++;
+        stats.unmatchedQty += qty;
+        stats.unmatchedSales += sales;
+        if (sku) stats.unmatchedSkuSet.add(sku);
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 4, false, 'SKU غير موجود في Business Report (Unmatched)', 0, 0));
+        continue;
+      }
+
+      if (!groups.has(asin)) groups.set(asin, { asin, qty:0, sales:0, title:'' });
+      const g = groups.get(asin);
+      g.qty += qty;
+      g.sales += sales;
+      if (!g.title && colMap['description']){
+        const desc = row[colMap['description']] !== undefined && row[colMap['description']] !== null
+          ? String(row[colMap['description']]).trim() : '';
+        if (desc) g.title = desc;
+      }
+
+      traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 5, true, null, qty, sales));
+    }
+
+    // Title priority, per ASIN: (1) transaction report's own description —
+    // already set above wherever present; (2) Business Report title, ONLY as
+    // a fallback for ASINs that never had a title in the transaction rows.
+    // Business Report's role stays SKU->ASIN mapping; it does not "own" title.
+    for (const g of groups.values()){
+      if (!g.title){
+        const fallback = mapping.asinFallbackTitles ? mapping.asinFallbackTitles.get(g.asin) : null;
+        if (fallback) g.title = fallback;
+      }
+    }
+
+    const results = Array.from(groups.values());
+    return { results, stats, trace: { steps: traceSteps, entries: traceEntries } };
+  }
+};
+
+/* =========================================================================
+   TRENDYOL ANALYZER MODULE
+   Trendyol's "sales-by-product-report" is already a pre-aggregated summary
+   (no per-transaction date column), so — unlike Noon/Amazon — there is no
+   in-app period filter here: whatever period the user already exported from
+   Trendyol's own dashboard is what gets analyzed. The tool's only job is to
+   MERGE every uploaded file's rows into one flat list first, then run a
+   single aggregation over the merge (never per-file pivot + merge-results).
+   ========================================================================= */
+const TrendyolAnalyzer = {
+  requiredColumns: ['Model code', 'Product name', 'Net items sold', 'Net sales', 'Discount amount'],
+  // Optional — display-only columns, never required. If a given file doesn't
+  // have one of these, that column is simply left blank for its rows instead
+  // of failing validation.
+  optionalColumns: ['Barcode', 'Category', 'Brand'],
+
+  validateColumns(headers){
+    const colMap = {};
+    const missing = [];
+    for (const col of this.requiredColumns){
+      const resolved = resolveColumnCI(headers, col);
+      if (!resolved) missing.push(col); else colMap[col] = resolved;
+    }
+    for (const col of this.optionalColumns){
+      const resolved = resolveColumnCI(headers, col);
+      if (resolved) colMap[col] = resolved;
+    }
+    return { valid: missing.length === 0, missing, colMap };
+  },
+
+  // mergedEntries: [{ row, colMap }, ...] — flattened rows from every uploaded
+  // file, each carrying its own resolved column map (files can use slightly
+  // different header casing and still merge correctly).
+  analyze(mergedEntries){
+    const stats = {
+      totalRows: mergedEntries.length,
+      noModelCodeRows: 0,
+      invalidQtyRows: 0,
+      invalidSalesRows: 0,
+      invalidDiscountRows: 0,
+    };
+
+    const groups = new Map(); // modelCode -> { modelCode, title, barcode, category, brand, qty, sales }
+    const traceEntries = [];
+    const traceSteps = ['Model code موجود', 'Net items sold صالحة', 'Net sales صالحة', 'Discount amount صالحة'];
+
+    const cellText = (row, colMap, col) => {
+      const resolvedKey = colMap[col];
+      if (!resolvedKey) return '';
+      const raw = row[resolvedKey];
+      return raw !== undefined && raw !== null ? String(raw).trim() : '';
+    };
+
+    for (let i = 0; i < mergedEntries.length; i++){
+      const { row, colMap, fileName } = mergedEntries[i];
+      const rowNumber = i + 1;
+
+      const modelCodeDisplay = row[colMap['Model code']] !== undefined && row[colMap['Model code']] !== null ? String(row[colMap['Model code']]).trim() : '';
+      const nameDisplay = cellText(row, colMap, 'Product name');
+      const traceFields = [
+        { label:'Barcode', value: cellText(row, colMap, 'Barcode') },
+        { label:'Category', value: cellText(row, colMap, 'Category') },
+        { label:'Brand', value: cellText(row, colMap, 'Brand') },
+        { label:'Net items sold', value: row[colMap['Net items sold']] !== undefined && row[colMap['Net items sold']] !== null ? String(row[colMap['Net items sold']]) : '' },
+        { label:'Net sales', value: row[colMap['Net sales']] !== undefined && row[colMap['Net sales']] !== null ? String(row[colMap['Net sales']]) : '' },
+        { label:'Discount amount', value: row[colMap['Discount amount']] !== undefined && row[colMap['Discount amount']] !== null ? String(row[colMap['Discount amount']]) : '' },
+        { label:'File', value: fileName || '' },
+      ];
+
+      const modelCodeRaw = row[colMap['Model code']];
+      const modelCode = modelCodeRaw !== undefined && modelCodeRaw !== null ? String(modelCodeRaw).trim() : '';
+      if (!modelCode){
+        stats.noModelCodeRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, modelCodeDisplay, nameDisplay, '', traceFields, 0, false, 'Model code فارغ (Empty Model code)', 0, 0));
+        continue;
+      }
+
+      const qty = parseNumericCell(row[colMap['Net items sold']]);
+      if (qty === null){
+        stats.invalidQtyRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, modelCodeDisplay, nameDisplay, '', traceFields, 1, false, 'Net items sold غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+      const netSales = parseNumericCell(row[colMap['Net sales']]);
+      if (netSales === null){
+        stats.invalidSalesRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, modelCodeDisplay, nameDisplay, '', traceFields, 2, false, 'Net sales غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+      const discount = parseNumericCell(row[colMap['Discount amount']]);
+      if (discount === null){
+        stats.invalidDiscountRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, modelCodeDisplay, nameDisplay, '', traceFields, 3, false, 'Discount amount غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+
+      // Internal business rule (not Trendyol's own "Net sales"):
+      // Business Sales = Net Sales + Discount Amount
+      const businessSales = netSales + discount;
+
+      const name = cellText(row, colMap, 'Product name');
+      const barcode = cellText(row, colMap, 'Barcode');
+      const category = cellText(row, colMap, 'Category');
+      const brand = cellText(row, colMap, 'Brand');
+
+      if (!groups.has(modelCode)) groups.set(modelCode, { modelCode, title:'', barcode:'', category:'', brand:'', qty:0, sales:0 });
+      const g = groups.get(modelCode);
+      g.qty += qty;
+      g.sales += businessSales;
+      // A Model code can span several rows (size/color variants), some of
+      // which carry blank display fields — keep the first non-empty value
+      // seen for each, per Model code. Barcode in particular is really a
+      // per-variant identifier, so this shows just one representative value.
+      if (!g.title && name) g.title = name;
+      if (!g.barcode && barcode) g.barcode = barcode;
+      if (!g.category && category) g.category = category;
+      if (!g.brand && brand) g.brand = brand;
+
+      traceEntries.push(makeTraceEntry(rowNumber, modelCodeDisplay, nameDisplay, '', traceFields, 4, true, null, qty, businessSales));
+    }
+
+    const results = Array.from(groups.values());
+    return { results, stats, trace: { steps: traceSteps, entries: traceEntries } };
+  }
+};
+
+/* =========================================================================
+   FILE PARSER MODULE
+   ========================================================================= */
+const FileParser = {
+  parseFile(file, preferredSheetNames){
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.csv')) return this._parseCsv(file);
+    if (name.endsWith('.xlsx')) return this._parseXlsx(file, preferredSheetNames);
+    return Promise.reject(new Error('صيغة الملف غير مدعومة. الصيغ المدعومة: CSV، XLSX.'));
+  },
+
+  _parseCsv(file){
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        encoding: 'UTF-8',
+        complete: (res) => {
+          if (!res.data || res.data.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          const headers = res.meta.fields.map(h => h.trim());
+          // Rows where PapaParse detected a structural problem (mismatched field
+          // count, usually caused by a stray quote character inside a text field
+          // like Title, which shifts that row's columns). These rows may have
+          // unreliable values in Transaction Date / SKUs / Net Proceeds.
+          const malformedRowCount = (res.errors || []).filter(
+            e => e.type === 'FieldMismatch'
+          ).length;
+          resolve({ headers, rows: res.data, malformedRowCount });
+        },
+        error: (err) => reject(new Error('تعذّرت قراءة الملف: ' + err.message)),
+      });
+    });
+  },
+
+  _parseXlsx(file, preferredSheetNames){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try{
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type:'array', cellDates:true });
+          let sheetName = wb.SheetNames[0];
+          if (preferredSheetNames && preferredSheetNames.length){
+            const match = wb.SheetNames.find(n => preferredSheetNames.includes(n));
+            if (match) sheetName = match;
+          }
+          const ws = wb.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw:true });
+          if (!rows || rows.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          const headers = Object.keys(rows[0]).map(h => h.trim());
+          resolve({ headers, rows, malformedRowCount: 0, sheetName });
+        } catch(err){
+          reject(new Error('تعذّرت قراءة ملف Excel: ' + err.message));
+        }
+      };
+      reader.onerror = () => reject(new Error('تعذّرت قراءة الملف.'));
+      reader.readAsArrayBuffer(file);
+    });
+  },
+
+  // Returns raw rows as arrays-of-arrays (no header assumption at all) — used
+  // for reports like Amazon's Custom Transaction export where an unknown
+  // number of metadata lines precede the real header row.
+  parseFileRaw(file){
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.csv')) return this._parseCsvRaw(file);
+    if (name.endsWith('.xlsx')) return this._parseXlsxRaw(file);
+    return Promise.reject(new Error('صيغة الملف غير مدعومة. الصيغ المدعومة: CSV، XLSX.'));
+  },
+
+  _parseCsvRaw(file){
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: false,
+        skipEmptyLines: true,
+        encoding: 'UTF-8',
+        complete: (res) => {
+          if (!res.data || res.data.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          resolve({ aoa: res.data });
+        },
+        error: (err) => reject(new Error('تعذّرت قراءة الملف: ' + err.message)),
+      });
+    });
+  },
+
+  _parseXlsxRaw(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try{
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type:'array', cellDates:true });
+          const firstSheet = wb.SheetNames[0];
+          const ws = wb.Sheets[firstSheet];
+          const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:true, blankrows:false });
+          if (!aoa || aoa.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          resolve({ aoa });
+        } catch(err){
+          reject(new Error('تعذّرت قراءة ملف Excel: ' + err.message));
+        }
+      };
+      reader.onerror = () => reject(new Error('تعذّرت قراءة الملف.'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+};
+
+// Build {headers, rows} objects from an array-of-arrays + a known header row index.
+function rowsFromAOA(aoa, headerRowIdx){
+  const headers = (aoa[headerRowIdx] || []).map(h => String(h).trim());
+  const rows = aoa.slice(headerRowIdx + 1)
+    .filter(r => r && r.length > 0 && !(r.length === 1 && String(r[0]).trim() === ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = r[idx] !== undefined ? r[idx] : ''; });
+      return obj;
+    });
+  return { headers, rows };
+}
+
+/* =========================================================================
+   EXCEL EXPORTER MODULE
+   ========================================================================= */
+const ExcelExporter = {
+  // columns: [{key,label,type:'text'|'int'|'dec'}, ...]
+  // summaryLines: [[label, value], ...] — already platform-specific, built by the caller
+  exportResults(results, columns, summaryLines, sheetName){
+    const wb = XLSX.utils.book_new();
+
+    const header = columns.map(c => c.label);
+    const body = results.map(r => columns.map(c => {
+      const v = r[c.key];
+      if (c.type === 'dec') return Number(Number(v || 0).toFixed(2));
+      if (c.type === 'int') return Math.round(Number(v || 0));
+      return v;
+    }));
+    const ws1 = XLSX.utils.aoa_to_sheet([header, ...body]);
+
+    ws1['!cols'] = columns.map(c => ({ wch: c.type === 'text' ? Math.max(18, c.label.length + 8) : 18 }));
+
+    const numFmtInt = '#,##0';
+    const numFmtDec = '#,##0.00';
+    for (let r = 0; r < body.length; r++){
+      columns.forEach((c, ci) => {
+        if (c.type === 'int' || c.type === 'dec'){
+          const addr = XLSX.utils.encode_cell({ r: r + 1, c: ci });
+          if (ws1[addr]) ws1[addr].z = c.type === 'dec' ? numFmtDec : numFmtInt;
+        }
+      });
+    }
+
+    if (body.length > 0){
+      ws1['!autofilter'] = { ref: XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:body.length, c:columns.length-1} }) };
+    }
+    // Best-effort header freeze. Plain community SheetJS builds (like the one
+    // loaded here from cdnjs) don't reliably honor this without the Pro
+    // add-on, but setting it is harmless if ignored.
+    ws1['!freeze'] = { xSplit:0, ySplit:1, topLeftCell:'A2', activePane:'bottomLeft', state:'frozen' };
+
+    XLSX.utils.book_append_sheet(wb, ws1, sheetName || 'تحليل المبيعات');
+
+    const ws2 = XLSX.utils.aoa_to_sheet([['البند','القيمة'], ...summaryLines]);
+    ws2['!cols'] = [{wch:36},{wch:26}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'ملخص');
+
+    XLSX.writeFile(wb, 'تحليل_المبيعات.xlsx');
+  }
+};
+
+/* =========================================================================
+   APP STATE + CONTROLLER
+   ========================================================================= */
+const state = {
+  platform: 'noon',
+  parsedFile: null,        // Noon: { headers, rows }
+  amazon: { mapping: null, txnRows: null, colMap: null }, // Amazon working state
+  trendyol: { files: [] }, // Trendyol working state: [{ id, name, rowCount, colMap, rows, hash, isDuplicate }]
+  dataDateBounds: null,    // { minTs, maxTs }
+  periodMode: 'date',      // 'date' | 'month'
+  results: [],
+  summary: null,
+  resultView: RESULT_VIEWS.noon,
+  sort: { key: 'qty', dir: 'desc' },
+  trace: null,             // { platformLabel, steps, entries } — set after a successful analysis, powers Search & Inspect
+};
+
+/* ---------- Render: platform chips ---------- */
+function renderPlatformChips(){
+  const container = document.getElementById('platformChips');
+  container.innerHTML = '';
+  PLATFORM_ORDER.forEach(id => {
+    const p = PLATFORMS[id];
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (id === state.platform ? ' active' : '') + (!p.available ? ' soon' : '');
+    chip.innerHTML = `<span>${p.name}</span>` + (!p.available ? `<span class="tag">قريبًا</span>` : `<span class="tag">متاح</span>`);
+    if (p.available){
+      chip.addEventListener('click', () => switchPlatform(id));
+    } else {
+      chip.disabled = true;
+    }
+    container.appendChild(chip);
+  });
+}
+renderPlatformChips();
+
+function switchPlatform(id){
+  if (state.platform === id) return;
+  state.platform = id;
+  renderPlatformChips();
+
+  document.getElementById('noonUploadBlock').style.display = id === 'noon' ? 'block' : 'none';
+  document.getElementById('amazonUploadBlock').style.display = id === 'amazon' ? 'block' : 'none';
+  document.getElementById('trendyolUploadBlock').style.display = id === 'trendyol' ? 'block' : 'none';
+
+  // Trendyol's report has no per-row date column to filter on — the period is
+  // whatever the user already exported from Trendyol's own dashboard — so the
+  // period-selection step doesn't apply at all for this platform.
+  const isTrendyol = id === 'trendyol';
+  document.getElementById('periodSelectionFields').style.display = isTrendyol ? 'none' : 'block';
+  document.getElementById('trendyolPeriodNote').style.display = isTrendyol ? 'block' : 'none';
+  document.getElementById('stepPeriodTitle').textContent = isTrendyol ? 'بدء التحليل' : 'حدد فترة التحليل';
+
+  // Switching platforms means the previously loaded file(s) no longer apply —
+  // reset everything downstream so stale results can't leak across platforms.
+  state.parsedFile = null;
+  state.amazon = { mapping: null, txnRows: null, colMap: null };
+  state.trendyol = { files: [] };
+  fileStatus.innerHTML = '';
+  document.getElementById('fileStatusAmzBiz').innerHTML = '';
+  document.getElementById('fileStatusAmzTxn').innerHTML = '';
+  document.getElementById('trendyolFileList').innerHTML = '';
+  fileInput.value = '';
+  document.getElementById('fileInputAmzBiz').value = '';
+  document.getElementById('fileInputAmzTxn').value = '';
+  document.getElementById('fileInputTrendyol').value = '';
+  resetDownstream();
+  analyzeBtn.disabled = true;
+  stepPeriod.classList.add('disabled');
+}
+
+/* ---------- Upload handling: Noon (single file) ---------- */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const fileStatus = document.getElementById('fileStatus');
+const stepPeriod = document.getElementById('stepPeriod');
+const analyzeBtn = document.getElementById('analyzeBtn');
+
+function wireDropzone(zoneEl, inputEl, onFile){
+  zoneEl.addEventListener('click', () => inputEl.click());
+  zoneEl.addEventListener('dragover', (e) => { e.preventDefault(); zoneEl.classList.add('drag'); });
+  zoneEl.addEventListener('dragleave', () => zoneEl.classList.remove('drag'));
+  zoneEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zoneEl.classList.remove('drag');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
+  });
+  inputEl.addEventListener('change', () => {
+    if (inputEl.files && inputEl.files[0]) onFile(inputEl.files[0]);
+  });
+}
+
+// Same as wireDropzone, but hands the callback the FULL list of files (drag or
+// multi-select) rather than only the first one — used for Trendyol.
+function wireDropzoneMulti(zoneEl, inputEl, onFiles){
+  zoneEl.addEventListener('click', () => inputEl.click());
+  zoneEl.addEventListener('dragover', (e) => { e.preventDefault(); zoneEl.classList.add('drag'); });
+  zoneEl.addEventListener('dragleave', () => zoneEl.classList.remove('drag'));
+  zoneEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zoneEl.classList.remove('drag');
+    if (e.dataTransfer.files && e.dataTransfer.files.length) onFiles(Array.from(e.dataTransfer.files));
+  });
+  inputEl.addEventListener('change', () => {
+    if (inputEl.files && inputEl.files.length){
+      onFiles(Array.from(inputEl.files));
+      inputEl.value = ''; // allow re-adding the same filename later
+    }
+  });
+}
+
+wireDropzone(dropzone, fileInput, handleFile);
+
+function resetDownstream(){
+  document.getElementById('stepSummary').style.display = 'none';
+  document.getElementById('stepTable').style.display = 'none';
+  document.getElementById('stepInspect').style.display = 'none';
+  stepPeriod.classList.add('disabled');
+  analyzeBtn.disabled = true;
+  document.getElementById('analyzeError').innerHTML = '';
+  document.getElementById('platformWarnings').innerHTML = '';
+  state.results = [];
+  state.summary = null;
+  state.trace = null;
+}
+
+function handleFile(file){
+  resetDownstream();
+  state.parsedFile = null;
+  fileStatus.innerHTML = '';
+  const nameLower = file.name.toLowerCase();
+  if (!nameLower.endsWith('.csv') && !nameLower.endsWith('.xlsx')){
+    fileStatus.innerHTML = `<div class="file-status err">⚠ صيغة الملف غير مدعومة. الرجاء رفع ملف CSV أو XLSX.</div>`;
+    return;
+  }
+
+  FileParser.parseFile(file).then(({headers, rows, malformedRowCount}) => {
+    const check = NoonAnalyzer.validateColumns(headers);
+    if (!check.valid){
+      fileStatus.innerHTML = `<div class="file-status err">⚠ لا يمكن تحليل الملف. الأعمدة التالية غير موجودة: ${check.missing.join(', ')}</div>`;
+      return;
+    }
+    state.parsedFile = { headers, rows };
+    let statusHtml = `<div class="file-status ok">✓ تم قراءة الملف بنجاح: <strong>${escapeHtml(file.name)}</strong> — ${rows.length.toLocaleString('en-US')} صف</div>`;
+    if (malformedRowCount > 0){
+      statusHtml += `<div class="msg-note">تنبيه: تم رصد ${malformedRowCount.toLocaleString('en-US')} صف بعدد أعمدة غير متطابق مع باقي الملف (غالبًا بسبب علامة اقتباس " داخل نص Title). قد تكون قيم هذه الصفوف غير دقيقة، وسيتم استبعادها تلقائيًا إن كان تاريخها غير صالح.</div>`;
+    }
+    fileStatus.innerHTML = statusHtml;
+
+    const dayTsList = [];
+    for (const row of rows){
+      const ts = normalizeDateCell(row['Transaction Date']);
+      if (ts !== null) dayTsList.push(ts);
+    }
+    applyDateBoundsToUI(dayTsList);
+    stepPeriod.classList.remove('disabled');
+    analyzeBtn.disabled = false;
+  }).catch(err => {
+    fileStatus.innerHTML = `<div class="file-status err">⚠ ${escapeHtml(err.message)}</div>`;
+  });
+}
+
+/* ---------- Upload handling: Amazon (two files) ---------- */
+const dropzoneAmzBiz = document.getElementById('dropzoneAmzBiz');
+const fileInputAmzBiz = document.getElementById('fileInputAmzBiz');
+const fileStatusAmzBiz = document.getElementById('fileStatusAmzBiz');
+const dropzoneAmzTxn = document.getElementById('dropzoneAmzTxn');
+const fileInputAmzTxn = document.getElementById('fileInputAmzTxn');
+const fileStatusAmzTxn = document.getElementById('fileStatusAmzTxn');
+
+wireDropzone(dropzoneAmzBiz, fileInputAmzBiz, handleAmazonBizFile);
+wireDropzone(dropzoneAmzTxn, fileInputAmzTxn, handleAmazonTxnFile);
+
+function updateAmazonReadiness(){
+  const txnReady = !!state.amazon.txnRows;
+  const bizReady = !!state.amazon.mapping;
+  if (txnReady) stepPeriod.classList.remove('disabled'); else stepPeriod.classList.add('disabled');
+  analyzeBtn.disabled = !(txnReady && bizReady);
+}
+
+function handleAmazonBizFile(file){
+  resetDownstream();
+  state.amazon.mapping = null;
+  fileStatusAmzBiz.innerHTML = '';
+  const nameLower = file.name.toLowerCase();
+  if (!nameLower.endsWith('.csv') && !nameLower.endsWith('.xlsx')){
+    fileStatusAmzBiz.innerHTML = `<div class="file-status err">⚠ صيغة الملف غير مدعومة. الرجاء رفع CSV أو XLSX.</div>`;
+    updateAmazonReadiness();
+    return;
+  }
+  FileParser.parseFile(file).then(({headers, rows}) => {
+    const check = AmazonAnalyzer.validateBusinessReport(headers, rows);
+    if (!check.valid){
+      fileStatusAmzBiz.innerHTML = `<div class="file-status err">⚠ هذا لا يبدو ملف Business Report الصحيح — الأعمدة التالية غير موجودة: ${check.missing.join(', ')}. تأكد من رفع الملف الصحيح في المكان الصحيح.</div>`;
+      updateAmazonReadiness();
+      return;
+    }
+    const mapping = AmazonAnalyzer.buildMapping(rows, check.skuCol, check.asinCol, check.titleCol);
+    state.amazon.mapping = mapping;
+    let html = `<div class="file-status ok">✓ تم قراءة الملف بنجاح: <strong>${escapeHtml(file.name)}</strong> — ${rows.length.toLocaleString('en-US')} صف، ${mapping.clean.size.toLocaleString('en-US')} SKU مرتبط بنجاح بـASIN</div>`;
+    if (mapping.conflicts.size > 0){
+      html += `<div class="msg-note">تنبيه: ${mapping.conflicts.size.toLocaleString('en-US')} SKU مرتبط بأكثر من ASIN مختلف داخل هذا الملف. صفوف مبيعات هذه الـSKUs سيتم استبعادها من النتيجة الرئيسية وتوضيحها في الملخص.</div>`;
+    }
+    fileStatusAmzBiz.innerHTML = html;
+    updateAmazonReadiness();
+  }).catch(err => {
+    fileStatusAmzBiz.innerHTML = `<div class="file-status err">⚠ ${escapeHtml(err.message)}</div>`;
+    updateAmazonReadiness();
+  });
+}
+
+function handleAmazonTxnFile(file){
+  resetDownstream();
+  state.amazon.txnRows = null;
+  state.amazon.colMap = null;
+  fileStatusAmzTxn.innerHTML = '';
+  const nameLower = file.name.toLowerCase();
+  if (!nameLower.endsWith('.csv') && !nameLower.endsWith('.xlsx')){
+    fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ صيغة الملف غير مدعومة. الرجاء رفع CSV أو XLSX.</div>`;
+    updateAmazonReadiness();
+    return;
+  }
+  FileParser.parseFileRaw(file).then(({aoa}) => {
+    const headerIdx = AmazonAnalyzer.detectTransactionHeaderRow(aoa);
+    if (headerIdx === -1){
+      fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ لم يتم العثور على صف العناوين المطلوب (date/time, sku, quantity, product sales) داخل هذا الملف. تأكد من رفع ملف Custom Transaction Report الصحيح.</div>`;
+      updateAmazonReadiness();
+      return;
+    }
+    const { headers, rows } = rowsFromAOA(aoa, headerIdx);
+    const check = AmazonAnalyzer.validateTransactionColumns(headers);
+    if (!check.valid){
+      fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ لا يمكن تحليل الملف. الأعمدة التالية غير موجودة: ${check.missing.join(', ')}</div>`;
+      updateAmazonReadiness();
+      return;
+    }
+    state.amazon.txnRows = rows;
+    state.amazon.colMap = check.colMap;
+    fileStatusAmzTxn.innerHTML = `<div class="file-status ok">✓ تم قراءة الملف بنجاح: <strong>${escapeHtml(file.name)}</strong> — ${rows.length.toLocaleString('en-US')} صف معاملة (تم اكتشاف صف العناوين تلقائيًا في السطر ${(headerIdx+1).toLocaleString('en-US')})</div>`;
+
+    const dayTsList = [];
+    for (const row of rows){
+      const utcMs = AmazonAnalyzer.parseAmazonTimestamp(row[check.colMap['date/time']]);
+      if (utcMs === null) continue;
+      dayTsList.push(AmazonAnalyzer.toRiyadhLocalDay(utcMs));
+    }
+    applyDateBoundsToUI(dayTsList);
+    updateAmazonReadiness();
+  }).catch(err => {
+    fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ ${escapeHtml(err.message)}</div>`;
+    updateAmazonReadiness();
+  });
+}
+
+/* ---------- Upload handling: Trendyol (any number of files, merged) ---------- */
+const dropzoneTrendyol = document.getElementById('dropzoneTrendyol');
+const fileInputTrendyol = document.getElementById('fileInputTrendyol');
+const trendyolFileList = document.getElementById('trendyolFileList');
+
+wireDropzoneMulti(dropzoneTrendyol, fileInputTrendyol, handleTrendyolFiles);
+
+let trendyolFileSeq = 0;
+
+// SHA-256 content hash — used to flag duplicate uploads even if the file was
+// renamed, rather than relying on filename/size alone.
+async function computeFileHash(file){
+  const buf = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function handleTrendyolFiles(fileList){
+  resetDownstream();
+  for (const file of fileList){
+    const entry = {
+      id: 'tf' + (++trendyolFileSeq),
+      name: file.name,
+      status: 'loading',
+      error: null,
+      rowCount: 0,
+      isDuplicate: false,
+      duplicateOfName: null,
+      colMap: null,
+      rows: null,
+      hash: null,
+    };
+    state.trendyol.files.push(entry);
+    renderTrendyolFileList();
+
+    const nameLower = file.name.toLowerCase();
+    if (!nameLower.endsWith('.csv') && !nameLower.endsWith('.xlsx')){
+      entry.status = 'error';
+      entry.error = 'صيغة الملف غير مدعومة (CSV أو XLSX فقط).';
+      renderTrendyolFileList();
+      updateTrendyolReadiness();
+      continue;
+    }
+
+    try{
+      const hash = await computeFileHash(file);
+      const existing = state.trendyol.files.find(f => f.id !== entry.id && f.hash === hash);
+      if (existing){
+        entry.isDuplicate = true;
+        entry.duplicateOfName = existing.name;
+      }
+      entry.hash = hash;
+
+      const { headers, rows } = await FileParser.parseFile(file, PLATFORMS.trendyol.preferredSheetNames);
+      const check = TrendyolAnalyzer.validateColumns(headers);
+      if (!check.valid){
+        entry.status = 'error';
+        entry.error = `الأعمدة التالية غير موجودة: ${check.missing.join(', ')}. تأكد من رفع تقرير Trendyol الصحيح (sales-by-product-report).`;
+        renderTrendyolFileList();
+        updateTrendyolReadiness();
+        continue;
+      }
+      entry.status = 'ok';
+      entry.rowCount = rows.length;
+      entry.colMap = check.colMap;
+      entry.rows = rows;
+    } catch(err){
+      entry.status = 'error';
+      entry.error = err.message;
+    }
+    renderTrendyolFileList();
+    updateTrendyolReadiness();
+  }
+}
+
+function removeTrendyolFile(id){
+  state.trendyol.files = state.trendyol.files.filter(f => f.id !== id);
+  // Re-evaluate duplicate flags now that the set changed (a removed file might
+  // have been the "original" that others were flagged against).
+  const seenHashes = new Map(); // hash -> first file name
+  for (const f of state.trendyol.files){
+    if (!f.hash) continue;
+    if (seenHashes.has(f.hash)){
+      f.isDuplicate = true;
+      f.duplicateOfName = seenHashes.get(f.hash);
+    } else {
+      f.isDuplicate = false;
+      f.duplicateOfName = null;
+      seenHashes.set(f.hash, f.name);
+    }
+  }
+  resetDownstream();
+  renderTrendyolFileList();
+  updateTrendyolReadiness();
+}
+
+function renderTrendyolFileList(){
+  trendyolFileList.innerHTML = state.trendyol.files.map(f => {
+    let meta;
+    if (f.status === 'loading') meta = 'جارٍ القراءة...';
+    else if (f.status === 'error') meta = `⚠ ${escapeHtml(f.error)}`;
+    else meta = `${f.rowCount.toLocaleString('en-US')} صف` + (f.isDuplicate ? ` — تنبيه: يبدو مطابقًا لمحتوى الملف "${escapeHtml(f.duplicateOfName)}"، قد يؤدي هذا إلى مضاعفة النتائج` : '');
+    const cls = 'file-list-item' + (f.status === 'error' ? ' dup' : (f.isDuplicate ? ' dup' : ''));
+    return `
+      <div class="${cls}">
+        <div>
+          <div class="fname">${escapeHtml(f.name)}</div>
+          <div class="fmeta">${meta}</div>
+        </div>
+        <button type="button" class="fremove" onclick="removeTrendyolFile('${f.id}')">✕ إزالة</button>
+      </div>`;
+  }).join('');
+}
+
+function updateTrendyolReadiness(){
+  const validFiles = state.trendyol.files.filter(f => f.status === 'ok');
+  analyzeBtn.disabled = validFiles.length === 0;
+  if (validFiles.length > 0) stepPeriod.classList.remove('disabled');
+  else stepPeriod.classList.add('disabled');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- Date bounds (shared by Noon + Amazon) — drives date-input min/max + month options ---------- */
+const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function applyDateBoundsToUI(dayTsList){
+  let minTs = null, maxTs = null;
+  for (const ts of dayTsList){
+    if (minTs === null || ts < minTs) minTs = ts;
+    if (maxTs === null || ts > maxTs) maxTs = ts;
+  }
+  if (minTs === null){
+    state.dataDateBounds = null;
+    return;
+  }
+  state.dataDateBounds = { minTs, maxTs };
+
+  const minD = new Date(minTs), maxD = new Date(maxTs);
+  const toInputStr = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+
+  const dateFrom = document.getElementById('dateFrom');
+  const dateTo = document.getElementById('dateTo');
+  dateFrom.min = toInputStr(minD); dateFrom.max = toInputStr(maxD);
+  dateTo.min = toInputStr(minD); dateTo.max = toInputStr(maxD);
+  dateFrom.value = toInputStr(minD);
+  dateTo.value = toInputStr(maxD);
+
+  // month options spanning min..max month
+  const monthFrom = document.getElementById('monthFrom');
+  const monthTo = document.getElementById('monthTo');
+  monthFrom.innerHTML = ''; monthTo.innerHTML = '';
+  let y = minD.getUTCFullYear(), m = minD.getUTCMonth()+1;
+  const endY = maxD.getUTCFullYear(), endM = maxD.getUTCMonth()+1;
+  const opts = [];
+  while (y < endY || (y === endY && m <= endM)){
+    opts.push({ y, m, label: `${MONTH_NAMES_AR[m-1]} ${y}` });
+    m++; if (m > 12){ m = 1; y++; }
+  }
+  opts.forEach(o => {
+    const val = `${o.y}-${String(o.m).padStart(2,'0')}`;
+    monthFrom.appendChild(new Option(o.label, val));
+    monthTo.appendChild(new Option(o.label, val));
+  });
+  monthFrom.value = opts[0] ? `${opts[0].y}-${String(opts[0].m).padStart(2,'0')}` : '';
+  const last = opts[opts.length-1];
+  monthTo.value = last ? `${last.y}-${String(last.m).padStart(2,'0')}` : '';
+}
+
+/* ---------- Period mode toggle ---------- */
+const modeDateBtn = document.getElementById('modeDateBtn');
+const modeMonthBtn = document.getElementById('modeMonthBtn');
+const dateModeFields = document.getElementById('dateModeFields');
+const monthModeFields = document.getElementById('monthModeFields');
+
+modeDateBtn.addEventListener('click', () => {
+  state.periodMode = 'date';
+  modeDateBtn.classList.add('active'); modeMonthBtn.classList.remove('active');
+  dateModeFields.style.display = 'flex'; monthModeFields.style.display = 'none';
+});
+modeMonthBtn.addEventListener('click', () => {
+  state.periodMode = 'month';
+  modeMonthBtn.classList.add('active'); modeDateBtn.classList.remove('active');
+  monthModeFields.style.display = 'flex'; dateModeFields.style.display = 'none';
+});
+
+/* ---------- Resolve chosen range -> {startTs, endTs} or throw (platform-agnostic) ---------- */
+function resolveRange(){
+  if (state.periodMode === 'date'){
+    const fromVal = document.getElementById('dateFrom').value;
+    const toVal = document.getElementById('dateTo').value;
+    if (!fromVal || !toVal) throw new Error('الرجاء تحديد تاريخ البداية وتاريخ النهاية.');
+    const [fy,fm,fd] = fromVal.split('-').map(Number);
+    const [ty,tm,td] = toVal.split('-').map(Number);
+    const startTs = utcDay(fy,fm,fd);
+    const endTs = utcDay(ty,tm,td);
+    if (startTs > endTs) throw new Error('تاريخ البداية يجب أن يكون قبل تاريخ النهاية أو مساويًا له.');
+    return { startTs, endTs, label: `${fromVal} → ${toVal}` };
+  } else {
+    const fromVal = document.getElementById('monthFrom').value;
+    const toVal = document.getElementById('monthTo').value;
+    if (!fromVal || !toVal) throw new Error('الرجاء تحديد شهر البداية وشهر النهاية.');
+    const [fy,fm] = fromVal.split('-').map(Number);
+    const [ty,tm] = toVal.split('-').map(Number);
+    const startTs = utcDay(fy,fm,1);
+    if (startTs > utcDay(ty,tm,1)) throw new Error('شهر البداية يجب أن يكون قبل شهر النهاية أو مساويًا له.');
+    // last day of the "to" month
+    const lastDay = new Date(Date.UTC(ty, tm, 0)).getUTCDate();
+    const endTs = utcDay(ty,tm,lastDay);
+    const fromLabel = `${MONTH_NAMES_AR[fm-1]} ${fy}`;
+    const toLabel = `${MONTH_NAMES_AR[tm-1]} ${ty}`;
+    return { startTs, endTs, label: `${fromLabel} → ${toLabel}` };
+  }
+}
+
+/* ---------- Analyze (dispatches to Noon or Amazon) ---------- */
+analyzeBtn.addEventListener('click', () => {
+  const errorBox = document.getElementById('analyzeError');
+  errorBox.innerHTML = '';
+  document.getElementById('platformWarnings').innerHTML = '';
+
+  if (state.platform === 'noon' && !state.parsedFile){
+    errorBox.innerHTML = `<div class="msg-error">لم يتم رفع ملف صالح بعد.</div>`;
+    return;
+  }
+  if (state.platform === 'amazon'){
+    if (!state.amazon.txnRows){
+      errorBox.innerHTML = `<div class="msg-error">لم يتم رفع ملف المبيعات (Custom Transaction Report) بعد.</div>`;
+      return;
+    }
+    if (!state.amazon.mapping){
+      errorBox.innerHTML = `<div class="msg-error">لم يتم رفع ملف ربط المنتجات (Business Report) بعد.</div>`;
+      return;
+    }
+  }
+  if (state.platform === 'trendyol'){
+    const validFiles = state.trendyol.files.filter(f => f.status === 'ok');
+    if (validFiles.length === 0){
+      errorBox.innerHTML = `<div class="msg-error">لم يتم رفع أي ملف Trendyol صالح بعد.</div>`;
+      return;
+    }
+    runTrendyolAnalysis(errorBox);
+    return;
+  }
+
+  let range;
+  try{
+    range = resolveRange();
+  } catch(err){
+    errorBox.innerHTML = `<div class="msg-error">${escapeHtml(err.message)}</div>`;
+    return;
+  }
+
+  if (state.platform === 'noon') runNoonAnalysis(range, errorBox);
+  else if (state.platform === 'amazon') runAmazonAnalysis(range, errorBox);
+});
+
+function showResultsSections(){
+  document.getElementById('stepSummary').style.display = 'block';
+  document.getElementById('stepTable').style.display = 'block';
+  document.getElementById('stepInspect').style.display = 'block';
+  document.getElementById('inspectSearchInput').value = '';
+  document.getElementById('inspectMatches').innerHTML = '';
+  document.getElementById('inspectPanel').innerHTML = '';
+  document.getElementById('stepSummary').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* ---------- Noon analysis run (unchanged logic from the original, tested version) ---------- */
+function runNoonAnalysis(range, errorBox){
+  const { results, stats, trace } = NoonAnalyzer.analyze(state.parsedFile.rows, range);
+
+  if (results.length === 0){
+    errorBox.innerHTML = `
+      <div class="msg-error">
+        لا توجد بيانات مبيعات صالحة داخل الفترة المختارة. تحقق من الفترة أو من محتوى الملف.
+        <div style="margin-top:10px; font-size:12.5px; opacity:.9;">
+          تفاصيل تشخيصية — من أصل ${stats.totalRows.toLocaleString('en-US')} صف في الملف:
+          <br>• صفوف داخل الفترة المختارة: ${stats.inRangeRows.toLocaleString('en-US')}
+          <br>• صفوف بتاريخ غير صالح (خارج الفترة أو تعذّر قراءته): ${stats.invalidDateRows.toLocaleString('en-US')}
+          <br>• صفوف مستبعدة لعدم وجود SKU: ${stats.noSkuExcludedRows.toLocaleString('en-US')}
+          <br>• صفوف مستبعدة لأن Transaction Type ليست "order": ${stats.nonOrderExcludedRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة Net Proceeds غير صالحة: ${stats.invalidNetProceedsRows.toLocaleString('en-US')}
+          <br>• صفوف مستبعدة لأن Net Proceeds سالبة: ${stats.negativeExcludedRows.toLocaleString('en-US')}
+        </div>
+      </div>`;
+    document.getElementById('stepSummary').style.display = 'none';
+    document.getElementById('stepTable').style.display = 'none';
+    return;
+  }
+
+  const totalQty = results.reduce((s,r) => s + r.qty, 0);
+  const totalNet = results.reduce((s,r) => s + r.net, 0);
+  const excelLines = [
+    ['الفترة المختارة', range.label],
+    ['إجمالي الكمية المباعة', totalQty],
+    ['عدد المنتجات', results.length],
+    ['إجمالي Net Proceeds', Number(totalNet.toFixed(2))],
+    ['نوع المعاملة المستخدم', 'order'],
+    ['عدد الصفوف المستبعدة لأنها ليست order', stats.nonOrderExcludedRows],
+    ['عدد الصفوف السالبة المستبعدة', stats.negativeExcludedRows],
+    ['عدد الصفوف بدون SKU المتجاهلة', stats.noSkuExcludedRows],
+  ];
+  state.summary = {
+    platform: 'noon',
+    periodText: range.label,
+    totalQty,
+    totalProducts: results.length,
+    totalNet,
+    negativeExcludedRows: stats.negativeExcludedRows,
+    noSkuExcludedRows: stats.noSkuExcludedRows,
+    nonOrderExcludedRows: stats.nonOrderExcludedRows,
+    invalidDateRows: stats.invalidDateRows,
+    invalidNetProceedsRows: stats.invalidNetProceedsRows,
+    excelLines,
+  };
+  state.results = results;
+  state.resultView = RESULT_VIEWS.noon;
+
+  if (stats.invalidDateRows > 0 || stats.invalidNetProceedsRows > 0){
+    let note = [];
+    if (stats.invalidDateRows > 0) note.push(`${stats.invalidDateRows} صف بتاريخ غير صالح تم تجاهله`);
+    if (stats.invalidNetProceedsRows > 0) note.push(`${stats.invalidNetProceedsRows} صف بقيمة Net Proceeds غير صالحة تم تجاهله`);
+    errorBox.innerHTML = `<div class="msg-note">ملاحظة: ${note.join(' — ')}.</div>`;
+  }
+
+  state.trace = { platformLabel: PLATFORMS.noon.name, steps: trace.steps, entries: trace.entries };
+
+  renderNoonSummary();
+  state.sort = { key:'qty', dir:'desc' };
+  renderTable();
+  showResultsSections();
+}
+
+/* ---------- Amazon analysis run ---------- */
+function runAmazonAnalysis(range, errorBox){
+  const selectedTypes = PLATFORMS.amazon.selectedTransactionTypes;
+  const { results, stats, trace } = AmazonAnalyzer.analyze(state.amazon.txnRows, state.amazon.colMap, state.amazon.mapping, range, selectedTypes);
+
+  if (results.length === 0){
+    errorBox.innerHTML = `
+      <div class="msg-error">
+        لا توجد بيانات مبيعات صالحة داخل الفترة المختارة بعد فلترة نوع المعاملة (${escapeHtml(selectedTypes.join(', '))}) والربط بـASIN. تحقق من الفترة أو من محتوى الملفين.
+        <div style="margin-top:10px; font-size:12.5px; opacity:.9;">
+          تفاصيل تشخيصية (بتوقيت السعودية) — من أصل ${stats.totalRows.toLocaleString('en-US')} صف في ملف المبيعات:
+          <br>• صفوف داخل الفترة المختارة: ${stats.inRangeRows.toLocaleString('en-US')}
+          <br>• صفوف مطابقة لنوع المعاملة المختار (${escapeHtml(selectedTypes.join(', '))}): ${stats.typeMatchedRows.toLocaleString('en-US')}
+          <br>• صفوف مستبعدة لأنها ليست ${escapeHtml(selectedTypes.join(', '))}: ${stats.typeExcludedRows.toLocaleString('en-US')}
+          <br>• صفوف بتاريخ/وقت غير صالح: ${stats.invalidDateRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة quantity غير صالحة: ${stats.invalidQuantityRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة product sales غير صالحة: ${stats.invalidSalesRows.toLocaleString('en-US')}
+          <br>• صفوف بدون SKU مطابق في Business Report: ${stats.unmatchedRows.toLocaleString('en-US')}
+          <br>• صفوف متأثرة بتعارض SKU→ASIN: ${stats.conflictRows.toLocaleString('en-US')}
+        </div>
+      </div>`;
+    document.getElementById('stepSummary').style.display = 'none';
+    document.getElementById('stepTable').style.display = 'none';
+    return;
+  }
+
+  const totalQty = results.reduce((s,r) => s + r.qty, 0);
+  const totalSales = results.reduce((s,r) => s + r.sales, 0);
+
+  const excelLines = [
+    ['الفترة المختارة', range.label],
+    ['Timezone المستخدم', 'Saudi Arabia — Asia/Riyadh (UTC+3)'],
+    ['نوع المعاملة المستخدم', selectedTypes.join(', ')],
+    ['إجمالي الكمية المباعة', totalQty],
+    ['عدد ASINs المختلفة', results.length],
+    ['إجمالي Product Sales', Number(totalSales.toFixed(2))],
+    ['صفوف داخل الفترة (قبل فلتر نوع المعاملة)', stats.inRangeRows],
+    [`صفوف مستبعدة لأنها ليست ${selectedTypes.join(', ')}`, stats.typeExcludedRows],
+    ['صفوف بدون SKU مطابق', stats.unmatchedRows],
+    ['SKUs مختلفة غير مطابقة', stats.unmatchedSkuSet.size],
+    ['كمية غير مطابقة', stats.unmatchedQty],
+    ['قيمة مبيعات غير مطابقة', Number(stats.unmatchedSales.toFixed(2))],
+    ['صفوف متأثرة بتعارض SKU→ASIN', stats.conflictRows],
+    ['SKUs بها تعارض', stats.conflictSkuSet.size],
+  ];
+
+  state.summary = {
+    platform: 'amazon',
+    periodText: range.label,
+    selectedTypes,
+    totalQty,
+    totalProducts: results.length,
+    totalSales,
+    stats,
+    excelLines,
+  };
+  state.results = results;
+  state.resultView = RESULT_VIEWS.amazon;
+
+  let notes = [];
+  if (stats.invalidDateRows > 0) notes.push(`${stats.invalidDateRows} صف بتاريخ/وقت غير صالح تم تجاهله`);
+  if (stats.invalidQuantityRows > 0) notes.push(`${stats.invalidQuantityRows} صف بقيمة quantity غير صالحة تم تجاهله`);
+  if (stats.invalidSalesRows > 0) notes.push(`${stats.invalidSalesRows} صف بقيمة product sales غير صالحة تم تجاهله`);
+  if (notes.length){
+    errorBox.innerHTML = `<div class="msg-note">ملاحظة: ${notes.join(' — ')}.</div>`;
+  }
+
+  state.trace = { platformLabel: PLATFORMS.amazon.name, steps: trace.steps, entries: trace.entries };
+
+  renderAmazonSummary();
+  state.sort = { key:'qty', dir:'desc' };
+  renderTable();
+  showResultsSections();
+}
+
+/* ---------- Trendyol analysis run ---------- */
+function runTrendyolAnalysis(errorBox){
+  const validFiles = state.trendyol.files.filter(f => f.status === 'ok');
+  const duplicateFiles = validFiles.filter(f => f.isDuplicate);
+
+  // Merge Rows -> Single Analysis: flatten every file's rows into one list
+  // BEFORE aggregating, rather than analyzing each file separately and
+  // combining pivots afterwards.
+  const mergedEntries = [];
+  for (const f of validFiles){
+    for (const row of f.rows){
+      mergedEntries.push({ row, colMap: f.colMap, fileName: f.name });
+    }
+  }
+
+  const { results, stats, trace } = TrendyolAnalyzer.analyze(mergedEntries);
+
+  if (results.length === 0){
+    errorBox.innerHTML = `
+      <div class="msg-error">
+        لا توجد بيانات مبيعات صالحة في الملف/الملفات المرفوعة.
+        <div style="margin-top:10px; font-size:12.5px; opacity:.9;">
+          تفاصيل تشخيصية — من أصل ${stats.totalRows.toLocaleString('en-US')} صف مدمج من ${validFiles.length.toLocaleString('en-US')} ملف:
+          <br>• صفوف بدون Model code: ${stats.noModelCodeRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة Net items sold غير صالحة: ${stats.invalidQtyRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة Net sales غير صالحة: ${stats.invalidSalesRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة Discount amount غير صالحة: ${stats.invalidDiscountRows.toLocaleString('en-US')}
+        </div>
+      </div>`;
+    document.getElementById('stepSummary').style.display = 'none';
+    document.getElementById('stepTable').style.display = 'none';
+    return;
+  }
+
+  const totalQty = results.reduce((s,r) => s + r.qty, 0);
+  const totalSales = results.reduce((s,r) => s + r.sales, 0);
+
+  const excelLines = [
+    ['عدد الملفات التي تم تحليلها', validFiles.length],
+    ['إجمالي الكمية المباعة', totalQty],
+    ['عدد المنتجات', results.length],
+    ['إجمالي Business Sales', Number(totalSales.toFixed(2))],
+    ['صفوف بدون Model code', stats.noModelCodeRows],
+    ['ملفات مكررة (بنفس المحتوى)', duplicateFiles.length],
+  ];
+
+  state.summary = {
+    platform: 'trendyol',
+    fileCount: validFiles.length,
+    duplicateFileCount: duplicateFiles.length,
+    duplicateFileNames: duplicateFiles.map(f => f.name),
+    totalQty,
+    totalProducts: results.length,
+    totalSales,
+    stats,
+    excelLines,
+  };
+  state.results = results;
+  state.resultView = RESULT_VIEWS.trendyol;
+
+  let notes = [];
+  if (stats.noModelCodeRows > 0) notes.push(`${stats.noModelCodeRows} صف بدون Model code تم تجاهله`);
+  if (stats.invalidQtyRows > 0) notes.push(`${stats.invalidQtyRows} صف بقيمة Net items sold غير صالحة تم تجاهله`);
+  if (stats.invalidSalesRows > 0) notes.push(`${stats.invalidSalesRows} صف بقيمة Net sales غير صالحة تم تجاهله`);
+  if (stats.invalidDiscountRows > 0) notes.push(`${stats.invalidDiscountRows} صف بقيمة Discount amount غير صالحة تم تجاهله`);
+  if (notes.length){
+    errorBox.innerHTML = `<div class="msg-note">ملاحظة: ${notes.join(' — ')}.</div>`;
+  }
+
+  state.trace = { platformLabel: PLATFORMS.trendyol.name, steps: trace.steps, entries: trace.entries };
+
+  renderTrendyolSummary();
+  state.sort = { key:'qty', dir:'desc' };
+  renderTable();
+  showResultsSections();
+}
+
+/* ---------- Render summary: Noon ---------- */
+function renderNoonSummary(){
+  const s = state.summary;
+  document.getElementById('platformWarnings').innerHTML = '';
+  document.getElementById('periodLine').textContent = `الفترة التي تم تحليلها: ${s.periodText}`;
+
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = `
+    <div class="summary-card">
+      <div class="label">إجمالي الكمية المباعة</div>
+      <div class="value num">${s.totalQty.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">عدد المنتجات</div>
+      <div class="value num">${s.totalProducts.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card" style="position:relative;">
+      <div class="stamp">إجمالي<br>مطابق</div>
+      <div class="label">إجمالي Net Proceeds</div>
+      <div class="value num">${formatNumber(s.totalNet)}</div>
+    </div>
+  `;
+
+  const excl = document.getElementById('exclLine');
+  excl.innerHTML = `
+    <span>صفوف مستبعدة لأنها ليست order: <span class="num">${s.nonOrderExcludedRows.toLocaleString('en-US')}</span></span>
+    <span>الصفوف السالبة المستبعدة: <span class="num">${s.negativeExcludedRows.toLocaleString('en-US')}</span></span>
+    <span>الصفوف بدون SKU المتجاهلة: <span class="num">${s.noSkuExcludedRows.toLocaleString('en-US')}</span></span>
+  `;
+}
+
+/* ---------- Render summary: Amazon ---------- */
+function renderAmazonSummary(){
+  const s = state.summary;
+  document.getElementById('periodLine').textContent = `الفترة التي تم تحليلها: ${s.periodText} — بتوقيت السعودية (Asia/Riyadh, UTC+3) — نوع المعاملة: ${s.selectedTypes.join(', ')}`;
+
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = `
+    <div class="summary-card">
+      <div class="label">إجمالي الكمية المباعة</div>
+      <div class="value num">${s.totalQty.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">عدد ASINs المختلفة</div>
+      <div class="value num">${s.totalProducts.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card" style="position:relative;">
+      <div class="stamp">إجمالي<br>مطابق</div>
+      <div class="label">إجمالي Product Sales</div>
+      <div class="value num">${formatNumber(s.totalSales)}</div>
+    </div>
+  `;
+
+  const excl = document.getElementById('exclLine');
+  excl.innerHTML = `
+    <span>صفوف مستبعدة لأنها ليست ${escapeHtml(s.selectedTypes.join(', '))}: <span class="num">${s.stats.typeExcludedRows.toLocaleString('en-US')}</span></span>
+    <span>صفوف بدون SKU مطابق: <span class="num">${s.stats.unmatchedRows.toLocaleString('en-US')}</span></span>
+    <span>صفوف متأثرة بتعارض SKU→ASIN: <span class="num">${s.stats.conflictRows.toLocaleString('en-US')}</span></span>
+  `;
+
+  const warnBox = document.getElementById('platformWarnings');
+  let html = '';
+  if (s.stats.unmatchedRows > 0){
+    const skuList = [...s.stats.unmatchedSkuSet].slice(0, 200);
+    html += `
+      <div class="warn-box">
+        <strong>SKUs غير موجودة في ملف Business Report</strong> — ${s.stats.unmatchedSkuSet.size.toLocaleString('en-US')} SKU مختلف، على ${s.stats.unmatchedRows.toLocaleString('en-US')} صف مبيعات
+        (كمية: ${s.stats.unmatchedQty.toLocaleString('en-US')} — قيمة: ${formatNumber(s.stats.unmatchedSales)}).
+        هذه الصفوف لم تُدخَل في النتيجة الرئيسية لعدم وجود ASIN مطابق لها.
+        <details class="sku-list">
+          <summary>عرض SKUs غير المطابقة (${skuList.length.toLocaleString('en-US')}${s.stats.unmatchedSkuSet.size > 200 ? '+' : ''})</summary>
+          <div class="list-body">${skuList.map(escapeHtml).join('<br>')}</div>
+        </details>
+      </div>`;
+  }
+  if (s.stats.conflictRows > 0){
+    const conflictList = [...s.stats.conflictSkuSet].slice(0, 200);
+    html += `
+      <div class="warn-box severe">
+        <strong>تعارض SKU → ASIN</strong> — ${s.stats.conflictSkuSet.size.toLocaleString('en-US')} SKU مرتبط بأكثر من Child ASIN مختلف داخل ملف Business Report، أثّر على ${s.stats.conflictRows.toLocaleString('en-US')} صف مبيعات
+        (كمية: ${s.stats.conflictQty.toLocaleString('en-US')} — قيمة: ${formatNumber(s.stats.conflictSales)}).
+        تم استبعاد هذه الصفوف من التحليل تفاديًا لأرقام غير دقيقة — راجع ملف الربط لهذه الـSKUs.
+        <details class="sku-list">
+          <summary>عرض SKUs المتعارضة (${conflictList.length.toLocaleString('en-US')}${s.stats.conflictSkuSet.size > 200 ? '+' : ''})</summary>
+          <div class="list-body">${conflictList.map(escapeHtml).join('<br>')}</div>
+        </details>
+      </div>`;
+  }
+  warnBox.innerHTML = html;
+}
+
+/* ---------- Render summary: Trendyol ---------- */
+function renderTrendyolSummary(){
+  const s = state.summary;
+  document.getElementById('periodLine').textContent = `تم تحليل ${s.fileCount.toLocaleString('en-US')} ${s.fileCount === 1 ? 'ملف' : 'ملفات'} مدمجة معًا كتقرير واحد (لا يوجد فلتر فترة لـTrendyol — الفترة هي ما تم تصديره من لوحة Trendyol نفسها).`;
+
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = `
+    <div class="summary-card">
+      <div class="label">عدد الملفات المحلَّلة</div>
+      <div class="value num">${s.fileCount.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">إجمالي الكمية المباعة</div>
+      <div class="value num">${s.totalQty.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">عدد المنتجات</div>
+      <div class="value num">${s.totalProducts.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card" style="position:relative;">
+      <div class="stamp">إجمالي<br>مطابق</div>
+      <div class="label">إجمالي Business Sales</div>
+      <div class="value num">${formatNumber(s.totalSales)}</div>
+    </div>
+  `;
+
+  const excl = document.getElementById('exclLine');
+  excl.innerHTML = `
+    <span>صفوف بدون Model code: <span class="num">${s.stats.noModelCodeRows.toLocaleString('en-US')}</span></span>
+  `;
+
+  const warnBox = document.getElementById('platformWarnings');
+  if (s.duplicateFileCount > 0){
+    warnBox.innerHTML = `
+      <div class="warn-box">
+        <strong>ملفات مكررة</strong> — تم رصد ${s.duplicateFileCount.toLocaleString('en-US')} ملف بمحتوى مطابق لملف آخر تم رفعه:
+        <div class="list-body" style="margin-top:8px;">${s.duplicateFileNames.map(escapeHtml).join('<br>')}</div>
+        هذا قد يؤدي إلى مضاعفة النتائج إذا لم يكن مقصودًا. التحليل استمر بكل الملفات كما هي — استخدم زر "✕ إزالة" في قائمة الملفات أعلاه لحذف أي نسخة غير مرغوبة ثم أعد التحليل.
+      </div>`;
+  } else {
+    warnBox.innerHTML = '';
+  }
+}
+
+/* ---------- Sorting + generic table render (driven by state.resultView) ---------- */
+function getSortedResults(){
+  const { key, dir } = state.sort;
+  const col = state.resultView.columns.find(c => c.key === key) || state.resultView.columns[0];
+  const accessor = col.type === 'text'
+    ? (r => String(r[col.key] || '').toLowerCase())
+    : (r => Number(r[col.key]) || 0);
+  return [...state.results].sort((a,b) => {
+    const av = accessor(a), bv = accessor(b);
+    if (av < bv) return dir === 'asc' ? -1 : 1;
+    if (av > bv) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+function renderTable(){
+  const view = state.resultView;
+  const sorted = getSortedResults();
+
+  const thead = document.getElementById('resultsHead');
+  const headRow = document.createElement('tr');
+  view.columns.forEach(col => {
+    const th = document.createElement('th');
+    th.dataset.key = col.key;
+    th.innerHTML = `${escapeHtml(col.label)} <span class="arrow"></span>`;
+    th.addEventListener('click', () => {
+      if (state.sort.key === col.key){
+        state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sort = { key: col.key, dir: (col.type === 'int' || col.type === 'dec') ? 'desc' : 'asc' };
+      }
+      renderTable();
+    });
+    headRow.appendChild(th);
+  });
+  thead.innerHTML = '';
+  thead.appendChild(headRow);
+
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = sorted.map(r => {
+    const cells = view.columns.map(col => {
+      const v = r[col.key];
+      if (col.type === 'text') return `<td>${escapeHtml(v)}</td>`;
+      if (col.type === 'int') return `<td class="num col-num">${Number(v).toLocaleString('en-US')}</td>`;
+      return `<td class="num col-num">${formatNumber(Number(v))}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('rowCount').textContent = `${sorted.length.toLocaleString('en-US')} ${view.resultNoun}`;
+
+  Array.from(thead.querySelectorAll('th')).forEach(th => {
+    const key = th.dataset.key;
+    const arrow = th.querySelector('.arrow');
+    arrow.textContent = key === state.sort.key ? (state.sort.dir === 'asc' ? '▲' : '▼') : '';
+  });
+
+  syncSortPresetDropdown();
+}
+
+/* ---------- Unified sort-preset dropdown (quantity/value, asc/desc) ---------- */
+const sortPresetEl = document.getElementById('sortPreset');
+sortPresetEl.addEventListener('change', () => {
+  const view = state.resultView;
+  const val = sortPresetEl.value;
+  if (val === 'qty_desc') state.sort = { key: view.qtyKey, dir:'desc' };
+  else if (val === 'value_desc') state.sort = { key: view.valueKey, dir:'desc' };
+  else if (val === 'qty_asc') state.sort = { key: view.qtyKey, dir:'asc' };
+  else if (val === 'value_asc') state.sort = { key: view.valueKey, dir:'asc' };
+  renderTable();
+});
+
+function syncSortPresetDropdown(){
+  const view = state.resultView;
+  const { key, dir } = state.sort;
+  if (key === view.qtyKey && dir === 'desc') sortPresetEl.value = 'qty_desc';
+  else if (key === view.valueKey && dir === 'desc') sortPresetEl.value = 'value_desc';
+  else if (key === view.qtyKey && dir === 'asc') sortPresetEl.value = 'qty_asc';
+  else if (key === view.valueKey && dir === 'asc') sortPresetEl.value = 'value_asc';
+  // else: a custom column sort (e.g. SKU/Title/ASIN text) — leave dropdown as-is
+}
+
+/* ---------- Export ---------- */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (!state.results.length) return;
+  const sorted = getSortedResults();
+  ExcelExporter.exportResults(sorted, state.resultView.columns, state.summary.excelLines, state.resultView.sheetName);
+});
+
+/* =========================================================================
+   SEARCH & INSPECT (generic debug/verification tool)
+   Reads only from state.trace, which every analyzer populates in the exact
+   same shape (see makeTraceEntry). Nothing here is platform-specific — a
+   new marketplace gets full Search & Inspect support automatically as soon
+   as its analyze() returns a `trace` object.
+   ========================================================================= */
+const inspectSearchInput = document.getElementById('inspectSearchInput');
+const inspectMatchesEl = document.getElementById('inspectMatches');
+const inspectPanelEl = document.getElementById('inspectPanel');
+
+inspectSearchInput.addEventListener('input', () => {
+  const q = inspectSearchInput.value.trim().toLowerCase();
+  inspectPanelEl.innerHTML = '';
+  if (!state.trace || q.length < 2){
+    inspectMatchesEl.innerHTML = '';
+    return;
+  }
+
+  // Group matching trace entries by searchKey (SKU / Model code / etc.)
+  const byKey = new Map();
+  for (const entry of state.trace.entries){
+    const hay = (entry.searchKey + ' ' + entry.title + ' ' + entry.orderId).toLowerCase();
+    if (!hay.includes(q)) continue;
+    if (!entry.searchKey) continue; // nothing to group/search by
+    if (!byKey.has(entry.searchKey)){
+      byKey.set(entry.searchKey, { key: entry.searchKey, title: entry.title, count: 0 });
+    }
+    const g = byKey.get(entry.searchKey);
+    g.count++;
+    if (!g.title && entry.title) g.title = entry.title;
+  }
+
+  const matches = Array.from(byKey.values()).slice(0, 30);
+  if (matches.length === 0){
+    inspectMatchesEl.innerHTML = `<div class="inspect-empty">لا توجد نتائج مطابقة.</div>`;
+    return;
+  }
+
+  inspectMatchesEl.innerHTML = `<div class="inspect-matches">${matches.map(m => `
+    <div class="inspect-match" data-key="${escapeHtml(m.key)}">
+      <div>
+        <div class="im-key">${escapeHtml(m.key)}</div>
+        ${m.title ? `<div class="im-title">${escapeHtml(m.title)}</div>` : ''}
+      </div>
+      <div class="im-count">${m.count.toLocaleString('en-US')} صف</div>
+    </div>
+  `).join('')}</div>`;
+
+  inspectMatchesEl.querySelectorAll('.inspect-match').forEach(el => {
+    el.addEventListener('click', () => openInspectPanel(el.dataset.key));
+  });
+});
+
+function openInspectPanel(searchKey){
+  if (!state.trace) return;
+  const rows = state.trace.entries.filter(e => e.searchKey === searchKey);
+  if (rows.length === 0) return;
+
+  const steps = state.trace.steps;
+  const title = rows.find(r => r.title)?.title || '';
+  const rowsFound = rows.length;
+  // Cascading counts: "After step[i]" = rows whose passedSteps reached at least i+1
+  const afterCounts = steps.map((_, i) => rows.filter(r => r.passedSteps >= i + 1).length);
+  const finalQty = rows.reduce((s,r) => s + r.qtyContribution, 0);
+  const totalSales = rows.reduce((s,r) => s + r.salesContribution, 0);
+
+  // Build the row table's column set from the union of field labels seen (preserving first-seen order)
+  const fieldLabels = [];
+  rows.forEach(r => r.fields.forEach(f => { if (!fieldLabels.includes(f.label)) fieldLabels.push(f.label); }));
+
+  const stepsHtml = [
+    `<div class="is-row"><span class="is-label">Rows Found</span><span>${rowsFound.toLocaleString('en-US')}</span></div>`,
+    ...steps.map((label, i) => `<div class="is-row"><span class="is-label">After ${escapeHtml(label)}</span><span>${afterCounts[i].toLocaleString('en-US')}</span></div>`),
+    `<div class="is-row final"><span class="is-label">Final Quantity</span><span>${finalQty.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row final"><span class="is-label">Total Sales</span><span>${formatNumber(totalSales)}</span></div>`,
+  ].join('');
+
+  const rowsTableHtml = `
+    <table class="inspect-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          ${fieldLabels.map(l => `<th>${escapeHtml(l)}</th>`).join('')}
+          <th>Included</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => {
+          const cellsByLabel = {};
+          r.fields.forEach(f => { cellsByLabel[f.label] = f.value; });
+          const cells = fieldLabels.map(l => `<td>${escapeHtml(cellsByLabel[l] ?? '')}</td>`).join('');
+          const badge = r.included
+            ? `<span class="included-badge yes">✅ Included</span>`
+            : `<span class="included-badge no">❌ Excluded</span>`;
+          const reason = r.exclusionReason ? `<span class="exclusion-reason">${escapeHtml(r.exclusionReason)}</span>` : '—';
+          return `<tr class="${r.included ? '' : 'excluded'}"><td class="num">${r.rowIndex}</td>${cells}<td>${badge}</td><td>${reason}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  inspectPanelEl.innerHTML = `
+    <div class="inspect-panel">
+      <div class="inspect-panel-head">
+        <div>
+          <h3>Inspect Calculation — ${escapeHtml(searchKey)}</h3>
+          <div class="ip-sub">${title ? escapeHtml(title) + ' — ' : ''}Marketplace: ${escapeHtml(state.trace.platformLabel)}</div>
+        </div>
+        <button type="button" class="inspect-copy-btn" id="inspectCopyBtn">⧉ Copy Debug Data</button>
+      </div>
+      <div class="inspect-panel-body">
+        <div class="inspect-steps">${stepsHtml}</div>
+        <details class="inspect-rows-toggle" open>
+          <summary>عرض كل الصفوف (${rowsFound.toLocaleString('en-US')})</summary>
+          <div class="inspect-table-scroll">${rowsTableHtml}</div>
+        </details>
+      </div>
+    </div>`;
+
+  document.getElementById('inspectCopyBtn').addEventListener('click', (e) => {
+    const payload = {
+      searchKey, title, marketplace: state.trace.platformLabel,
+      rowsFound, steps: steps.map((label,i) => ({ label, rowsRemaining: afterCounts[i] })),
+      finalQuantity: finalQty, totalSales,
+      rows: rows.map(r => ({
+        row: r.rowIndex,
+        ...Object.fromEntries(r.fields.map(f => [f.label, f.value])),
+        included: r.included,
+        reason: r.exclusionReason || '',
+      })),
+    };
+    navigator.clipboard.writeText(JSON.stringify(payload, null, 2)).then(() => {
+      const btn = e.currentTarget;
+      const original = btn.textContent;
+      btn.textContent = '✓ تم النسخ';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+    });
+  });
+
+  inspectPanelEl.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+</script>
+</body>
+</html>
