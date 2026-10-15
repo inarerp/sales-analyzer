@@ -37,8 +37,6 @@ body{
   font-variant-numeric:tabular-nums;
   direction:ltr; unicode-bidi:isolate;
 }
-
-/* ---------- Header ---------- */
 header.top{
   display:flex; align-items:center; justify-content:space-between; gap:16px;
   padding:10px 0 26px;
@@ -61,8 +59,6 @@ header.top{
   border:1px dashed var(--line);
   padding:5px 10px; border-radius:20px; white-space:nowrap;
 }
-
-/* ---------- Section shell ---------- */
 .step{
   background:var(--paper-card);
   border:1px solid var(--line);
@@ -80,8 +76,6 @@ header.top{
 .step-head h2{ font-size:16.5px; margin:0; font-weight:700; color:var(--ink); }
 .step.disabled{ opacity:.45; pointer-events:none; }
 .hidden{ display:none !important; }
-
-/* ---------- Upload ---------- */
 .dropzone{
   border:2px dashed var(--line);
   border-radius:var(--radius);
@@ -92,8 +86,6 @@ header.top{
 .dropzone input{ display:none; }
 .dropzone .icon{ font-size:26px; margin-bottom:6px; }
 .dropzone .hint{ font-size:12.5px; color:var(--text-muted); margin-top:4px; }
-
-/* ---------- File list ---------- */
 .file-list{ margin-top:14px; display:flex; flex-direction:column; gap:8px; }
 .file-item{
   display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -111,15 +103,11 @@ header.top{
   padding:4px 8px; flex-shrink:0;
 }
 .file-item .fremove:hover{ text-decoration:underline; }
-
-/* ---------- Messages ---------- */
 .msg{ margin-top:12px; padding:12px 14px; border-radius:8px; font-size:13px; line-height:1.6; }
 .msg-error{ background:#F7E9E5; border:1px solid #E3B7A9; color:var(--danger); }
 .msg-warning{ background:#FBF3E8; border:1px solid var(--accent-soft); color:#7A5117; }
 .msg-success{ background:#EAF3ED; border:1px solid #A8D5BA; color:var(--positive); }
 .msg-info{ background:#EEF3F8; border:1px solid #B8C9DB; color:#1E4A7A; }
-
-/* ---------- Buttons ---------- */
 .btn{
   font-family:'Tajawal', sans-serif;
   font-weight:700; font-size:14.5px;
@@ -135,8 +123,6 @@ header.top{
 .btn-accent:hover{ filter:brightness(1.05); }
 .btn-sm{ padding:6px 14px; font-size:12.5px; }
 .btn-danger{ background:var(--danger); color:#fff; padding:6px 12px; font-size:12px; }
-
-/* ---------- Summary ---------- */
 .summary-card{
   background:var(--paper);
   border:1px solid var(--line-soft);
@@ -166,8 +152,6 @@ header.top{
   from{ transform:rotate(-14deg) scale(0.4); opacity:0; }
   to{ transform:rotate(-14deg) scale(1); opacity:1; }
 }
-
-/* ---------- Tabs ---------- */
 .tabs{ display:flex; gap:6px; border-bottom:2px solid var(--line-soft); margin-bottom:18px; flex-wrap:wrap; }
 .tab-btn{
   padding:9px 18px; border:none; background:none;
@@ -179,8 +163,6 @@ header.top{
 .tab-btn.active{ color:var(--ink); border-bottom-color:var(--accent); }
 .tab-content{ display:none; }
 .tab-content.active{ display:block; }
-
-/* ---------- Tables ---------- */
 .table-scroll{
   overflow-x:auto;
   border:1px solid var(--line-soft);
@@ -197,7 +179,6 @@ tbody td{ padding:10px 14px; border-bottom:1px solid var(--line-soft); }
 tbody tr:nth-child(even){ background:#FBFAF6; }
 tbody tr:hover{ background:#F3EEE0; }
 .col-num{ text-align:left; }
-
 .monthly-table{ width:100%; border-collapse:collapse; }
 .monthly-table th{
   background:var(--ink); color:#fff;
@@ -206,8 +187,6 @@ tbody tr:hover{ background:#F3EEE0; }
 .monthly-table td{ padding:9px 12px; border-bottom:1px solid var(--line-soft); }
 .monthly-table tr.total-row{ background:#EEF3F8; font-weight:700; }
 .monthly-table tr.total-row td{ border-top:2px solid var(--ink); }
-
-/* ---------- Formula box ---------- */
 .formula-box{
   background:#EEF3F8;
   border:2px solid #B8C9DB;
@@ -218,8 +197,6 @@ tbody tr:hover{ background:#F3EEE0; }
 }
 .formula-box .formula{ color:#1E4A7A; font-weight:600; }
 .formula-box .result{ color:var(--positive); font-weight:700; font-size:15px; }
-
-/* ---------- Validation ---------- */
 .validation-list{ display:flex; flex-direction:column; gap:8px; }
 .validation-item{
   display:flex; align-items:center; gap:10px;
@@ -230,8 +207,6 @@ tbody tr:hover{ background:#F3EEE0; }
   font-size:13px;
 }
 .validation-icon{ font-size:16px; flex-shrink:0; }
-
-/* ---------- Download area ---------- */
 .download-area{
   margin-top:22px; padding:20px;
   background:var(--paper);
@@ -254,8 +229,6 @@ tbody tr:hover{ background:#F3EEE0; }
 }
 .filename-input:focus{ outline:2px solid var(--accent-soft); border-color:var(--accent); }
 .filename-hint{ font-size:11.5px; color:var(--text-muted); margin-top:6px; }
-
-/* ---------- Modal ---------- */
 .modal-overlay{
   position:fixed; inset:0;
   background:rgba(22,48,42,0.5);
@@ -279,8 +252,6 @@ tbody tr:hover{ background:#F3EEE0; }
   direction:ltr; text-align:right;
 }
 .modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
-
-/* ---------- Search & Inspect ---------- */
 #inspectSearchInput{
   font-family:'IBM Plex Mono', monospace;
   font-size:13.5px; padding:10px 12px;
@@ -376,12 +347,10 @@ table.inspect-table tbody tr:not(.excluded):hover{ background:#F3EEE0; }
 .included-badge.yes{ color:var(--positive); }
 .included-badge.no{ color:var(--danger); }
 .exclusion-reason{ color:var(--danger); font-size:11.5px; }
-
 footer.foot{
   text-align:center; color:var(--text-muted);
   font-size:12px; margin-top:34px;
 }
-
 @media (max-width:640px){
   .step{ padding:16px; }
   thead th, tbody td{ padding:8px 10px; font-size:12.5px; }
@@ -403,7 +372,6 @@ footer.foot{
   <div class="badge-ledger">لا تخزين • لا حسابات • خصوصية كاملة</div>
 </header>
 
-<!-- STEP 1: Upload -->
 <section class="step" id="stepUpload">
   <div class="step-head">
     <span class="step-num">01</span>
@@ -419,7 +387,6 @@ footer.foot{
   <div id="uploadMsg"></div>
 </section>
 
-<!-- STEP 2: Analyze -->
 <section class="step hidden" id="stepAnalyze">
   <div class="step-head">
     <span class="step-num">02</span>
@@ -429,7 +396,6 @@ footer.foot{
   <div id="analysisProgress" class="hidden msg msg-info">⏳ جاري معالجة البيانات...</div>
 </section>
 
-<!-- STEP 3: Results -->
 <section class="step hidden" id="stepResults">
   <div class="step-head">
     <span class="step-num">03</span>
@@ -468,7 +434,6 @@ footer.foot{
     <div id="validationList"></div>
   </div>
 
-  <!-- Search & Inspect -->
   <div style="margin-top:24px; padding-top:20px; border-top:1px dashed var(--line);">
     <div class="step-head">
       <span class="step-num">🔍</span>
@@ -484,7 +449,6 @@ footer.foot{
     <div id="inspectPanel"></div>
   </div>
 
-  <!-- Download -->
   <div class="download-area">
     <h3>📥 تنزيل التقرير</h3>
     <div class="filename-row">
@@ -502,7 +466,6 @@ footer.foot{
 
 </div>
 
-<!-- Download Modal -->
 <div id="filenameModal" class="modal-overlay hidden">
   <div class="modal">
     <h3>تنزيل التقرير</h3>
@@ -665,6 +628,7 @@ function handleFiles(fileList){
       showMsg('uploadMsg', `ملف غير مدعوم: ${file.name}`, 'error');
       return;
     }
+    // ✅ إصلاح: مقارنة size بـ size بدلاً من rowCount بـ size
     const isDuplicate = state.files.some(f => f.originalName === file.name && f.size === file.size);
     if (isDuplicate){
       showMsg('uploadMsg', `⚠️ الملف "${file.name}" مرفوع مسبقًا — تم تجاهله`, 'warning');
@@ -739,6 +703,7 @@ function renderFileList(){
     const monthStr = (f.detectedMonth && f.detectedYear) ? `${MONTH_AR[f.detectedMonth-1]} ${f.detectedYear}` : 'غير محدد';
     const div = document.createElement('div');
     div.className = 'file-item';
+    // ✅ إصلاح: استخدام data attribute بدلاً من onclick inline
     div.innerHTML = `
       <div>
         <div class="fname">${escapeHtml(f.originalName)}</div>
@@ -750,11 +715,13 @@ function renderFileList(){
       </div>
       <button type="button" class="fremove" data-id="${f.id}">✕ إزالة</button>
     `;
+    // ✅ إصلاح: استخدام addEventListener بدلاً من onclick
     div.querySelector('.fremove').addEventListener('click', () => removeFile(f.id));
     c.appendChild(div);
   });
 }
 
+// ✅ إصلاح: دالة محلية بدلاً من window.removeFile
 function removeFile(id){
   state.files = state.files.filter(f => f.id !== id);
   renderFileList();
@@ -779,7 +746,7 @@ document.getElementById('runAnalysisBtn').addEventListener('click', () => {
       const dateStr = new Date().toISOString().slice(0,10);
       document.getElementById('defaultFilename').value = `تقرير_مبيعات_نون_${dateStr}`;
     } catch(err){
-      alert('خطأ في التحليل: ' + err.message);
+      showMsg('uploadMsg', 'خطأ في التحليل: ' + err.message, 'error');
       console.error(err);
     } finally {
       document.getElementById('analysisProgress').classList.add('hidden');
@@ -834,7 +801,6 @@ function executeAnalysis(files){
         _globalRow: ++globalRowCounter,
       };
 
-      // Trace entry (for Search & Inspect)
       const traceFields = [
         { label:'Document Type',   value: cols.documentTypeCol ? String(row[cols.documentTypeCol] || '') : '' },
         { label:'Document Subtype',value: cols.documentSubtypeCol ? String(row[cols.documentSubtypeCol] || '') : '' },
@@ -910,7 +876,6 @@ function executeAnalysis(files){
       }
     });
 
-    // Match returns with sales by Order ID
     const orderMap = new Map();
     sales.forEach(s => {
       const key = s._orderId || `__no_order_${s._idx}`;
@@ -962,7 +927,6 @@ function executeAnalysis(files){
     summary.matchedReturnsValue = round2(summary.matchedReturnsValue);
     summary.unmatchedReturnsValue = round2(summary.unmatchedReturnsValue);
 
-    // Track products from sales
     sales.forEach(s => {
       const key = s._sku;
       if (!result.productMap.has(key)){
@@ -981,10 +945,10 @@ function executeAnalysis(files){
       }
       const pm = p.perMonth.get(summary.month);
       pm.qty_sold++; pm.value_sold += s._val;
-      if (p.title !== s._desc && !p.title.includes(s._desc)) p.title = p.title + ' | ' + s._desc;
+      // ✅ إصلاح: الاحتفاظ بأول وصف فقط بدلاً من دمج لا نهائي
+      if (!p.title && s._desc) p.title = s._desc;
     });
 
-    // Track matched returns
     summary.matchedReturnRows.forEach(r => {
       const p = result.productMap.get(r._sku);
       if (p){
@@ -999,7 +963,6 @@ function executeAnalysis(files){
       }
     });
 
-    // Track unmatched returns
     summary.unmatchedReturnRows.forEach(r => {
       const p = result.productMap.get(r._sku);
       if (p){
@@ -1017,7 +980,6 @@ function executeAnalysis(files){
     result.fileSummaries.push(summary);
   });
 
-  // Compute NET per product
   result.productMap.forEach(p => {
     p.qty_net = p.qty_sold - p.qty_returned_matched - p.qty_returned_unmatched;
     p.value_net = round2(p.value_sold - p.value_returned_matched - p.value_returned_unmatched);
@@ -1028,7 +990,6 @@ function executeAnalysis(files){
     });
   });
 
-  // Global totals
   let gSales=0, gReturns=0, gFees=0, gMatchedRet=0, gUnmatchRet=0, gFinal=0, gFinalQty=0;
   result.fileSummaries.forEach(f => {
     gSales += f.salesValue; gReturns += f.returnsValue; gFees += f.feesValue;
@@ -1070,7 +1031,6 @@ function executeAnalysis(files){
       pass: Math.abs(sumProductsValue - result.global.finalValue) < 0.05 }
   ];
 
-  // Attach trace for Search & Inspect
   result.trace = {
     platformLabel: 'Noon (Settlement)',
     steps: ['تصنيف الصف (sale / return / fee / other)', 'SKU غير فارغ', 'مطابقة المرتجع مع بيع بنفس Order ID'],
@@ -1091,7 +1051,6 @@ function renderResults(a){
 
   const sortedSummaries = sortByMonth(a.fileSummaries);
 
-  // Monthly table
   let monthlyHtml = `
     <div class="summary-card">
       <div class="stamp ${stampCls}">${stampTxt}</div>
@@ -1142,7 +1101,6 @@ function renderResults(a){
   `;
   document.getElementById('monthlyTable').innerHTML = monthlyHtml;
 
-  // Formula box
   document.getElementById('formulaBox').innerHTML = `
     <div class="formula-box">
       <div class="formula"><strong>المعادلة:</strong></div>
@@ -1241,7 +1199,6 @@ function exportUnifiedReport(filename){
   const sortedSummaries = sortByMonth(a.fileSummaries);
   const g = a.global;
 
-  // Sheet 1: الإجماليات
   const totalsData = [
     ['إجماليات التقرير'],
     [],
@@ -1265,7 +1222,6 @@ function exportUnifiedReport(filename){
   wsTotals['!freeze'] = { xSplit:0, ySplit:12 };
   XLSX.utils.book_append_sheet(wb, wsTotals, 'الإجماليات');
 
-  // Sheets per month
   sortedSummaries.forEach(f => {
     const sheetName = makeSafeSheetName(f.month, usedNames);
     const monthData = [
@@ -1365,11 +1321,9 @@ function openInspectPanel(searchKey){
   const rows = state.analysis.trace.entries.filter(e => e.searchKey === searchKey);
   if (rows.length === 0) return;
 
-  const steps = state.analysis.trace.steps;
   const title = rows.find(r => r.title)?.title || '';
   const rowsFound = rows.length;
 
-  // Build cascading counts based on classification
   const saleRows = rows.filter(r => r.classification === 'sale');
   const returnRows = rows.filter(r => r.classification === 'return');
   const feeRows = rows.filter(r => r.classification === 'fee');
