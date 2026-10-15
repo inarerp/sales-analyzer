@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دفتر — تحليل مبيعات Amazon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  --ink:#16302A; --ink-soft:#24443A;
+  --paper:#F8F6F0; --paper-alt:#EFEAdd; --paper-card:#FFFFFF;
+  --line:#D9D2BE; --line-soft:#E7E2D2;
+  --accent:#C77D2E; --accent-soft:#E9BD84;
+  --positive:#2F6B4F; --danger:#A6402F;
+  --text:#1C241F; --text-muted:#64705F;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(22,48,42,0.06), 0 8px 24px -12px rgba(22,48,42,0.18);
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--paper);
+  background-image:linear-gradient(var(--line-soft) 1px, transparent 1px);
+  background-size:100% 42px;
+  color:var(--text);
+  font-family:'Tajawal', sans-serif;
+  min-height:100vh;
+  line-height:1.55;
+}
+.wrap{ max-width:980px; margin:0 auto; padding:28px 20px 80px; }
+.num{
+  font-family:'IBM Plex Mono', monospace;
+  font-variant-numeric:tabular-nums;
+  direction:ltr; unicode-bidi:isolate;
+}
+
+/* ---------- Header ---------- */
+header.top{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:10px 0 26px;
+  border-bottom:2px solid var(--ink);
+  margin-bottom:30px;
+}
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand-mark{
+  width:38px; height:38px; border-radius:50%;
+  border:2px solid var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600; color:var(--ink); font-size:14px; flex-shrink:0;
+}
+.brand h1{ font-size:20px; margin:0; font-weight:800; color:var(--ink); letter-spacing:.2px; }
+.brand p{ margin:0; font-size:12.5px; color:var(--text-muted); }
+.badge-ledger{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px; color:var(--text-muted);
+  border:1px dashed var(--line);
+  padding:5px 10px; border-radius:20px; white-space:nowrap;
+}
+
+/* ---------- Section shell ---------- */
+.step{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px 24px;
+  margin-bottom:20px;
+}
+.step-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:16px; }
+.step-num{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px; color:var(--accent); font-weight:600;
+  border-bottom:2px solid var(--accent-soft); padding-bottom:2px;
+}
+.step-head h2{ font-size:16.5px; margin:0; font-weight:700; color:var(--ink); }
+.step.disabled{ opacity:.45; pointer-events:none; }
+
+/* ---------- Amazon dual upload ---------- */
+.amazon-file-group{
+  margin-bottom:18px;
+}
+.amazon-file-group:last-child{ margin-bottom:0; }
+.amazon-file-group h3{
+  font-size:13.5px;
+  margin:0 0 3px;
+  color:var(--ink);
+  font-weight:700;
+}
+.amazon-file-group .hint{
+  font-size:12px;
+  color:var(--text-muted);
+  margin:0 0 10px;
+}
+.platform-hint{
+  font-size:12.5px;
+  color:var(--text-muted);
+  margin-bottom:14px;
+}
+
+/* ---------- Upload ---------- */
+.dropzone{
+  border:2px dashed var(--line);
+  border-radius:var(--radius);
+  padding:30px 20px; text-align:center; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.dropzone:hover, .dropzone.drag{ border-color:var(--accent); background:#FBF3E8; }
+.dropzone input{ display:none; }
+.dropzone .icon{ font-size:26px; margin-bottom:6px; }
+.dropzone .hint{ font-size:12.5px; color:var(--text-muted); margin-top:4px; }
+.file-status{
+  margin-top:14px; display:flex; align-items:center; gap:10px;
+  font-size:13.5px; padding:10px 14px; border-radius:8px;
+}
+.file-status.ok{ background:#EAF3ED; color:var(--positive); }
+.file-status.err{ background:#F7E9E5; color:var(--danger); }
+
+/* ---------- Period selector ---------- */
+.mode-toggle{
+  display:inline-flex;
+  border:1.5px solid var(--line);
+  border-radius:8px; overflow:hidden;
+  margin-bottom:18px;
+}
+.mode-toggle button{
+  border:none; background:var(--paper);
+  padding:9px 18px;
+  font-family:'Tajawal', sans-serif;
+  font-weight:600; font-size:13.5px;
+  cursor:pointer; color:var(--text-muted);
+}
+.mode-toggle button.active{ background:var(--ink); color:#fff; }
+.period-row{ display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; }
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field label{ font-size:12.5px; color:var(--text-muted); font-weight:600; }
+.field input, .field select{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13.5px; padding:9px 10px;
+  border-radius:7px; border:1.5px solid var(--line);
+  background:#fff; color:var(--text); min-width:150px;
+}
+.field select{ font-family:'Tajawal', sans-serif; direction:rtl; }
+.field input:focus, .field select:focus{
+  outline:2px solid var(--accent-soft); outline-offset:1px; border-color:var(--accent);
+}
+
+/* ---------- Buttons ---------- */
+.btn{
+  font-family:'Tajawal', sans-serif;
+  font-weight:700; font-size:14.5px;
+  border-radius:9px; padding:12px 26px;
+  border:none; cursor:pointer;
+  transition:transform .08s, box-shadow .15s;
+}
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background:var(--ink); color:#fff; }
+.btn-primary:hover{ background:var(--ink-soft); }
+.btn-primary:disabled{ background:#B9C2BB; cursor:not-allowed; }
+.btn-accent{ background:var(--accent); color:#fff; }
+.btn-accent:hover{ filter:brightness(1.05); }
+.msg-error{
+  margin-top:14px; background:#F7E9E5;
+  border:1px solid #E3B7A9; color:var(--danger);
+  padding:12px 16px; border-radius:8px;
+  font-size:13.5px; line-height:1.6;
+}
+.msg-note{
+  margin-top:12px; background:#FBF3E8;
+  border:1px solid var(--accent-soft); color:#7A5117;
+  padding:10px 14px; border-radius:8px; font-size:12.5px;
+}
+
+/* ---------- Summary ---------- */
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+  gap:14px;
+}
+.summary-card{
+  background:var(--paper);
+  border:1px solid var(--line-soft);
+  border-radius:9px;
+  padding:14px 16px; position:relative;
+}
+.summary-card .label{
+  font-size:11.5px; color:var(--text-muted);
+  font-weight:600; margin-bottom:6px;
+}
+.summary-card .value{ font-size:21px; font-weight:600; color:var(--ink); }
+.period-line{
+  font-size:13px; color:var(--text-muted);
+  margin-bottom:16px; padding-bottom:12px;
+  border-bottom:1px dashed var(--line);
+}
+.stamp{
+  position:absolute; top:-14px; left:-10px;
+  width:56px; height:56px; border-radius:50%;
+  border:2px dashed var(--positive); color:var(--positive);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:9px; font-weight:600;
+  transform:rotate(-14deg);
+  background:rgba(47,107,79,0.06);
+  text-align:center; line-height:1.15;
+  animation:stampIn .35s ease-out;
+}
+@keyframes stampIn{
+  from{ transform:rotate(-14deg) scale(0.4); opacity:0; }
+  to{ transform:rotate(-14deg) scale(1); opacity:1; }
+}
+.excl-line{
+  margin-top:14px; font-size:12px; color:var(--text-muted);
+  display:flex; gap:18px; flex-wrap:wrap;
+}
+
+/* ---------- Warning / disclosure (Amazon-specific) ---------- */
+.warn-box{
+  margin-top:14px;
+  background:#FBF3E8;
+  border:1px solid var(--accent-soft);
+  color:#7A5117;
+  padding:12px 16px;
+  border-radius:8px;
+  font-size:12.5px;
+  line-height:1.7;
+}
+.warn-box.severe{
+  background:#F7E9E5;
+  border-color:#E3B7A9;
+  color:var(--danger);
+}
+details.sku-list{
+  margin-top:8px;
+}
+details.sku-list summary{
+  cursor:pointer;
+  font-weight:600;
+  color:inherit;
+}
+details.sku-list .list-body{
+  margin-top:8px;
+  max-height:160px;
+  overflow-y:auto;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11.5px;
+  background:rgba(255,255,255,0.5);
+  border-radius:6px;
+  padding:8px 10px;
+  direction:ltr;
+  text-align:left;
+}
+
+/* ---------- Table ---------- */
+.table-scroll{
+  overflow-x:auto;
+  border:1px solid var(--line-soft);
+  border-radius:9px;
+}
+table{ border-collapse:collapse; width:100%; min-width:520px; font-size:13.5px; }
+thead th{
+  background:var(--ink); color:#fff;
+  padding:11px 14px; text-align:right;
+  font-weight:700; cursor:pointer; user-select:none;
+  white-space:nowrap; position:sticky; top:0;
+}
+thead th .arrow{ font-size:10px; margin-inline-start:4px; opacity:.85; }
+tbody td{ padding:10px 14px; border-bottom:1px solid var(--line-soft); }
+tbody tr:nth-child(even){ background:#FBFAF6; }
+tbody tr:hover{ background:#F3EEE0; }
+.col-num{ text-align:left; }
+.table-toolbar{
+  display:flex; justify-content:space-between;
+  align-items:center; flex-wrap:wrap; gap:10px;
+  margin-bottom:14px;
+}
+.row-count{ font-size:12.5px; color:var(--text-muted); }
+.toolbar-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.toolbar-left label{ font-size:12.5px; color:var(--text-muted); font-weight:600; }
+.sort-select{
+  font-family:'Tajawal', sans-serif;
+  font-size:13px; padding:8px 10px;
+  border-radius:7px; border:1.5px solid var(--line);
+  background:#fff; color:var(--text); direction:rtl;
+}
+.sort-select:focus{
+  outline:2px solid var(--accent-soft); outline-offset:1px; border-color:var(--accent);
+}
+
+/* ---------- Search & Inspect ---------- */
+#inspectSearchInput{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13.5px; padding:10px 12px;
+  border-radius:8px; border:1.5px solid var(--line);
+  background:#fff; width:100%;
+  direction:ltr; text-align:right;
+}
+#inspectSearchInput:focus{
+  outline:2px solid var(--accent-soft); outline-offset:1px; border-color:var(--accent);
+}
+.inspect-matches{
+  margin-top:10px; display:flex; flex-direction:column; gap:6px;
+  max-height:260px; overflow-y:auto;
+}
+.inspect-match{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:var(--paper);
+  border:1px solid var(--line-soft);
+  border-radius:7px; padding:9px 13px;
+  cursor:pointer; font-size:13px; text-align:right;
+}
+.inspect-match:hover{ border-color:var(--accent-soft); background:#FBF3E8; }
+.inspect-match .im-key{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--ink); direction:ltr; }
+.inspect-match .im-title{ color:var(--text-muted); font-size:12px; }
+.inspect-match .im-count{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-muted); flex-shrink:0; }
+.inspect-empty{ margin-top:10px; font-size:12.5px; color:var(--text-muted); }
+.inspect-panel{
+  margin-top:18px;
+  border:1.5px solid var(--ink);
+  border-radius:10px; overflow:hidden;
+}
+.inspect-panel-head{
+  background:var(--ink); color:#fff;
+  padding:14px 18px;
+  display:flex; justify-content:space-between;
+  align-items:flex-start; gap:12px; flex-wrap:wrap;
+}
+.inspect-panel-head h3{ margin:0 0 4px; font-size:15px; }
+.inspect-panel-head .ip-sub{ font-size:12px; opacity:.85; }
+.inspect-panel-body{ padding:18px; background:#fff; }
+.inspect-copy-btn{
+  background:var(--accent); color:#fff;
+  border:none; border-radius:7px;
+  padding:8px 14px;
+  font-family:'Tajawal', sans-serif;
+  font-weight:700; font-size:12.5px;
+  cursor:pointer; flex-shrink:0;
+}
+.inspect-copy-btn:hover{ filter:brightness(1.05); }
+.inspect-copy-btn.copied{ background:var(--positive); }
+.inspect-steps{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  background:var(--paper);
+  border:1px dashed var(--line);
+  border-radius:8px;
+  padding:14px 16px; line-height:2;
+}
+.inspect-steps .is-row{ display:flex; justify-content:space-between; gap:10px; }
+.inspect-steps .is-row.final{
+  font-weight:700; color:var(--ink);
+  border-top:1px dashed var(--line);
+  margin-top:6px; padding-top:8px;
+}
+.inspect-steps .is-label{ color:var(--text-muted); }
+.inspect-steps .is-row.final .is-label{ color:var(--ink); }
+.inspect-rows-toggle summary{
+  cursor:pointer; font-weight:700; color:var(--ink);
+  margin-top:18px; font-size:13.5px;
+}
+.inspect-table-scroll{
+  margin-top:10px; overflow-x:auto;
+  border:1px solid var(--line-soft);
+  border-radius:8px; max-height:420px; overflow-y:auto;
+}
+table.inspect-table{
+  border-collapse:collapse; width:100%;
+  min-width:640px; font-size:12.5px;
+}
+table.inspect-table thead th{
+  background:var(--paper-alt); color:var(--ink);
+  position:sticky; top:0;
+  padding:9px 10px; text-align:right; white-space:nowrap;
+  border-bottom:1.5px solid var(--line);
+}
+table.inspect-table tbody td{
+  padding:8px 10px; border-bottom:1px solid var(--line-soft); white-space:nowrap;
+}
+table.inspect-table tbody tr.excluded{ background:#FBF4F1; }
+table.inspect-table tbody tr.excluded:hover{ background:#F7E9E5; }
+table.inspect-table tbody tr:not(.excluded):hover{ background:#F3EEE0; }
+.included-badge{ font-weight:700; }
+.included-badge.yes{ color:var(--positive); }
+.included-badge.no{ color:var(--danger); }
+.exclusion-reason{ color:var(--danger); font-size:11.5px; }
+
+footer.foot{
+  text-align:center; color:var(--text-muted);
+  font-size:12px; margin-top:34px;
+}
+
+@media (max-width:640px){
+  .step{ padding:16px; }
+  thead th, tbody td{ padding:8px 10px; font-size:12.5px; }
+  .brand h1{ font-size:17px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark">أ</div>
+    <div>
+      <h1>دفتر مبيعات Amazon</h1>
+      <p>تحليل ملفات مبيعات أمازون — يعمل بالكامل داخل متصفحك</p>
+    </div>
+  </div>
+  <div class="badge-ledger">لا تخزين • لا حسابات • خصوصية كاملة</div>
+</header>
+
+<!-- STEP 1: Upload (two files) -->
+<section class="step" id="stepUpload">
+  <div class="step-head">
+    <span class="step-num">01</span>
+    <h2>ارفع ملفات Amazon</h2>
+  </div>
+  <p class="platform-hint">نوع التحليل الحالي: <strong>المبيعات — Order</strong> فقط (لا تُحتسب المرتجعات أو الرسوم أو أي معاملات أخرى ضمن هذه النتيجة).</p>
+
+  <div class="amazon-file-group">
+    <h3>الملف الأول — ملف ربط المنتجات (Business Report)</h3>
+    <p class="hint">يُستخدم لربط SKU بالـ Child ASIN. الأعمدة المطلوبة: SKU، ASIN (المنتج الفرعي).</p>
+    <div class="dropzone" id="dropzoneAmzBiz">
+      <input type="file" id="fileInputAmzBiz" accept=".csv,.xlsx" />
+      <div class="icon">⬆</div>
+      <div><strong>اسحب ملف Business Report هنا أو اضغط للاختيار</strong></div>
+      <div class="hint">CSV أو XLSX</div>
+    </div>
+    <div id="fileStatusAmzBiz"></div>
+  </div>
+
+  <div class="amazon-file-group">
+    <h3>الملف الثاني — ملف المبيعات (Custom Transaction Report)</h3>
+    <p class="hint">يحتوي على date/time، sku، quantity، و product sales. يتم اكتشاف صف العناوين تلقائيًا حتى لو سبقته أسطر Metadata.</p>
+    <div class="dropzone" id="dropzoneAmzTxn">
+      <input type="file" id="fileInputAmzTxn" accept=".csv,.xlsx" />
+      <div class="icon">⬆</div>
+      <div><strong>اسحب ملف Custom Transaction هنا أو اضغط للاختيار</strong></div>
+      <div class="hint">CSV أو XLSX</div>
+    </div>
+    <div id="fileStatusAmzTxn"></div>
+  </div>
+</section>
+
+<!-- STEP 2: Period -->
+<section class="step disabled" id="stepPeriod">
+  <div class="step-head">
+    <span class="step-num">02</span>
+    <h2>حدد فترة التحليل</h2>
+  </div>
+  <div class="mode-toggle">
+    <button type="button" id="modeDateBtn" class="active">نطاق تاريخ</button>
+    <button type="button" id="modeMonthBtn">نطاق شهور</button>
+  </div>
+  <div id="dateModeFields" class="period-row">
+    <div class="field">
+      <label for="dateFrom">من تاريخ</label>
+      <input type="date" id="dateFrom">
+    </div>
+    <div class="field">
+      <label for="dateTo">إلى تاريخ</label>
+      <input type="date" id="dateTo">
+    </div>
+  </div>
+  <div id="monthModeFields" class="period-row" style="display:none;">
+    <div class="field">
+      <label for="monthFrom">من شهر</label>
+      <select id="monthFrom"></select>
+    </div>
+    <div class="field">
+      <label for="monthTo">إلى شهر</label>
+      <select id="monthTo"></select>
+    </div>
+  </div>
+  <div style="margin-top:20px;">
+    <button class="btn btn-primary" id="analyzeBtn" disabled>تحليل المبيعات</button>
+  </div>
+  <div id="analyzeError"></div>
+</section>
+
+<!-- STEP 3: Summary -->
+<section class="step" id="stepSummary" style="display:none;">
+  <div class="step-head">
+    <span class="step-num">03</span>
+    <h2>ملخص التحليل</h2>
+  </div>
+  <div class="period-line" id="periodLine"></div>
+  <div class="summary-grid" id="summaryGrid"></div>
+  <div class="excl-line" id="exclLine"></div>
+  <div id="platformWarnings"></div>
+</section>
+
+<!-- STEP: Search & Inspect -->
+<section class="step" id="stepInspect" style="display:none;">
+  <div class="step-head">
+    <span class="step-num">🔍</span>
+    <h2>Search &amp; Inspect</h2>
+  </div>
+  <p class="platform-hint">
+    ابحث بـ SKU، أو جزء من اسم المنتج، أو رقم الطلب — لمعرفة بالتفصيل كيف وصلت الأداة للنتيجة النهائية لهذا العنصر تحديدًا.
+  </p>
+  <div class="field" style="max-width:420px;">
+    <input type="text" id="inspectSearchInput" placeholder="ابحث بـ SKU / اسم المنتج / رقم الطلب..." autocomplete="off">
+  </div>
+  <div id="inspectMatches"></div>
+  <div id="inspectPanel"></div>
+</section>
+
+<!-- STEP 4: Table -->
+<section class="step" id="stepTable" style="display:none;">
+  <div class="step-head">
+    <span class="step-num">04</span>
+    <h2>نتائج التحليل</h2>
+  </div>
+  <div class="table-toolbar">
+    <div class="toolbar-left">
+      <span class="row-count" id="rowCount"></span>
+      <label for="sortPreset">ترتيب النتائج حسب:</label>
+      <select class="sort-select" id="sortPreset">
+        <option value="qty_desc">الأكثر مبيعًا — عدد القطع</option>
+        <option value="value_desc">الأعلى مبيعات — القيمة</option>
+        <option value="qty_asc">الأقل مبيعًا — عدد القطع</option>
+        <option value="value_asc">الأقل مبيعات — القيمة</option>
+      </select>
+    </div>
+    <button class="btn btn-accent" id="exportBtn">⬇ تنزيل Excel</button>
+  </div>
+  <div class="table-scroll">
+    <table id="resultsTable">
+      <thead id="resultsHead"></thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="foot">تتم كل المعالجة محليًا داخل المتصفح — لا يتم رفع أي بيانات إلى أي خادم.</footer>
+
+</div>
+
+<script>
+/* =========================================================================
+AMAZON CONFIG
+========================================================================= */
+const AMAZON_CONFIG = {
+  requiredBusinessColumns: ['SKU', 'Child ASIN'],
+  requiredTransactionColumns: ['date/time', 'sku', 'quantity', 'product sales', 'type'],
+  timezone: 'Asia/Riyadh',
+  selectedTransactionTypes: ['Order'],
+};
+
+/* =========================================================================
+RESULT VIEW (Amazon only)
+========================================================================= */
+const RESULT_VIEW = {
+  columns: [
+    { key:'asin',  label:'ASIN',            type:'text' },
+    { key:'title', label:'Title',           type:'text' },
+    { key:'qty',   label:'الكمية المباعة',  type:'int'  },
+    { key:'sales', label:'إجمالي المبيعات', type:'dec'  },
+  ],
+  qtyKey: 'qty',
+  valueKey: 'sales',
+  sheetName: 'تحليل المبيعات',
+  resultNoun: 'ASIN',
+};
+
+/* =========================================================================
+UTILITIES
+========================================================================= */
+function formatNumber(n, decimals=2){
+  return n.toLocaleString('en-US', { minimumFractionDigits:decimals, maximumFractionDigits:decimals });
+}
+
+function utcDay(y, m, d){ return Date.UTC(y, m-1, d); }
+
+function parseNumericCell(value){
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return isNaN(value) ? null : value;
+  let s = String(value).trim();
+  if (s === '') return null;
+  s = s.replace(/,/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+// Case/whitespace-insensitive column name lookup: returns the ACTUAL header
+// string found in `headers` matching `name`, or null.
+function resolveColumnCI(headers, name){
+  const target = name.trim().toLowerCase();
+  const found = headers.find(h => String(h).trim().toLowerCase() === target);
+  return found !== undefined ? found : null;
+}
+
+function makeTraceEntry(rowIndex, searchKey, title, orderId, fields, passedSteps, included, exclusionReason, qtyContribution, salesContribution){
+  return { rowIndex, searchKey, title, orderId, fields, passedSteps, included, exclusionReason, qtyContribution, salesContribution };
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* =========================================================================
+AMAZON ANALYZER MODULE
+========================================================================= */
+const MONTHS_EN_ABBR = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+
+const AMAZON_TRANSACTION_TYPES = {
+  'Order':            { label:'المبيعات (Order)',        description:'معاملات بيع المنتجات — الطلبات الفعلية.', uncertain:false },
+  'Refund':           { label:'المرتجعات (Refund)',      description:'مبالغ مرتبطة برد قيمة الطلبات أو المنتجات للعملاء.', uncertain:false },
+  'Adjustment':       { label:'تسويات (Adjustment)',     description:'تعديلات مالية من Amazon على الحساب.', uncertain:true },
+  'Transfer':         { label:'تحويلات (Transfer)',      description:'تحويل رصيد الحساب إلى حساب البائع البنكي.', uncertain:true },
+  'Service Fee':      { label:'رسوم خدمة (Service Fee)', description:'رسوم خدمات عامة من Amazon.', uncertain:true },
+  'FBA Inventory Fee':{ label:'رسوم مخزون FBA',          description:'رسوم متعلقة بتخزين أو معالجة مخزون FBA.', uncertain:true },
+  'Shipping Services':{ label:'خدمات شحن',               description:'معاملة متعلقة بخدمات الشحن.', uncertain:true },
+  'Others':           { label:'أخرى (Others)',           description:'معاملات غير مصنّفة ضمن الأنواع الأخرى.', uncertain:true },
+};
+
+const AmazonAnalyzer = {
+  RIYADH_OFFSET_MINUTES: 180, // Asia/Riyadh = UTC+3
+
+  // ---- Business Report (SKU -> Child ASIN mapping) ----
+  resolveBusinessColumns(headers){
+    const skuCol = resolveColumnCI(headers, 'SKU');
+    const asinCandidates = ['asin (المنتج الفرعي)', '(child) asin', 'child asin', 'asin(child)'];
+    let asinCol = null;
+    for (const cand of asinCandidates){
+      asinCol = resolveColumnCI(headers, cand);
+      if (asinCol) break;
+    }
+    let asinColViaFallback = false;
+    if (!asinCol && headers.length > 1){ asinCol = headers[1]; asinColViaFallback = true; }
+
+    const titleCandidates = ['العنوان', 'title', 'item name', 'product name', 'product title'];
+    let titleCol = null;
+    for (const cand of titleCandidates){
+      titleCol = resolveColumnCI(headers, cand);
+      if (titleCol) break;
+    }
+
+    return { skuCol, asinCol, asinColViaFallback, titleCol };
+  },
+
+  looksLikeAsin(value){
+    return /^[A-Z0-9]{10}$/.test(String(value || '').trim());
+  },
+
+  validateBusinessReport(headers, rows){
+    const { skuCol, asinCol, asinColViaFallback, titleCol } = this.resolveBusinessColumns(headers);
+    const missing = [];
+    if (!skuCol) missing.push('SKU');
+    if (!asinCol) missing.push('Child ASIN');
+    if (missing.length > 0) return { valid:false, missing, skuCol, asinCol, titleCol };
+
+    if (asinColViaFallback){
+      const sample = (rows || []).slice(0, 200).map(r => String(r[asinCol] || '').trim()).filter(v => v !== '');
+      const validCount = sample.filter(v => this.looksLikeAsin(v)).length;
+      const ratio = sample.length ? validCount / sample.length : 0;
+      if (sample.length === 0 || ratio < 0.8){
+        return {
+          valid:false,
+          missing:['Child ASIN (لم يتم العثور على عمود بالاسم المتوقع، والعمود البديل (B) لا يحتوي على قيم تشبه ASIN فعليًا)'],
+          skuCol, asinCol, titleCol,
+        };
+      }
+    }
+    return { valid:true, missing:[], skuCol, asinCol, titleCol };
+  },
+
+  buildMapping(rows, skuCol, asinCol, titleCol){
+    const seen = new Map(); // sku -> Set(asin)
+    const businessTitles = new Map(); // sku -> title
+    for (const row of rows){
+      const sku = row[skuCol] !== undefined && row[skuCol] !== null ? String(row[skuCol]).trim() : '';
+      const asin = row[asinCol] !== undefined && row[asinCol] !== null ? String(row[asinCol]).trim() : '';
+      if (sku && titleCol){
+        const t = row[titleCol] !== undefined && row[titleCol] !== null ? String(row[titleCol]).trim() : '';
+        if (t && !businessTitles.has(sku)) businessTitles.set(sku, t);
+      }
+      if (!sku || !asin) continue;
+      if (!seen.has(sku)) seen.set(sku, new Set());
+      seen.get(sku).add(asin);
+    }
+    const clean = new Map();
+    const conflicts = new Map();
+    for (const [sku, asinSet] of seen.entries()){
+      if (asinSet.size === 1) clean.set(sku, [...asinSet][0]);
+      else conflicts.set(sku, [...asinSet]);
+    }
+    const asinFallbackTitles = new Map();
+    for (const [sku, asinVal] of clean.entries()){
+      if (!asinFallbackTitles.has(asinVal)){
+        const t = businessTitles.get(sku);
+        if (t) asinFallbackTitles.set(asinVal, t);
+      }
+    }
+    return { clean, conflicts, businessTitles, asinFallbackTitles };
+  },
+
+  // ---- Custom Transaction Report ----
+  detectTransactionHeaderRow(aoa){
+    const required = AMAZON_CONFIG.requiredTransactionColumns;
+    const scanLimit = Math.min(aoa.length, 50);
+    for (let i = 0; i < scanLimit; i++){
+      const cells = (aoa[i] || []).map(c => String(c).trim().toLowerCase());
+      const hasAll = required.every(col => cells.includes(col));
+      if (hasAll) return i;
+    }
+    return -1;
+  },
+
+  validateTransactionColumns(headers){
+    const required = AMAZON_CONFIG.requiredTransactionColumns;
+    const colMap = {};
+    const missing = [];
+    for (const col of required){
+      const resolved = resolveColumnCI(headers, col);
+      if (!resolved) missing.push(col); else colMap[col] = resolved;
+    }
+    const descCol = resolveColumnCI(headers, 'description') || resolveColumnCI(headers, 'title');
+    if (descCol) colMap['description'] = descCol;
+    const orderIdCol = resolveColumnCI(headers, 'order id');
+    if (orderIdCol) colMap['order id'] = orderIdCol;
+    return { valid:missing.length === 0, missing, colMap };
+  },
+
+  parseAmazonTimestamp(str){
+    if (typeof str !== 'string') return null;
+    const m = str.trim().match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)\s+UTC$/i);
+    if (!m) return null;
+    const day = parseInt(m[1], 10);
+    const monthIdx = MONTHS_EN_ABBR.indexOf(m[2].toLowerCase());
+    if (monthIdx === -1) return null;
+    const year = parseInt(m[3], 10);
+    let hour = parseInt(m[4], 10) % 12;
+    const minute = parseInt(m[5], 10);
+    const second = parseInt(m[6], 10);
+    if (m[7].toUpperCase() === 'PM') hour += 12;
+    if (day < 1 || day > 31) return null;
+    return Date.UTC(year, monthIdx, day, hour, minute, second);
+  },
+
+  toRiyadhLocalDay(utcMs){
+    const shifted = new Date(utcMs + this.RIYADH_OFFSET_MINUTES * 60000);
+    return utcDay(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate());
+  },
+
+  analyze(rows, colMap, mapping, range, selectedTypes){
+    const typeSet = new Set(selectedTypes || ['Order']);
+    const stats = {
+      totalRows: rows.length,
+      inRangeRows: 0,
+      typeMatchedRows: 0,
+      typeExcludedRows: 0,
+      invalidDateRows: 0,
+      invalidQuantityRows: 0,
+      invalidSalesRows: 0,
+      unmatchedRows: 0,
+      unmatchedQty: 0,
+      unmatchedSales: 0,
+      unmatchedSkuSet: new Set(),
+      conflictRows: 0,
+      conflictQty: 0,
+      conflictSales: 0,
+      conflictSkuSet: new Set(),
+    };
+
+    const groups = new Map(); // asin -> { asin, qty, sales, title }
+    const traceEntries = [];
+    const traceSteps = [
+      'التاريخ داخل الفترة (بتوقيت الرياض)',
+      'Transaction Type ضمن الأنواع المختارة',
+      'Quantity صالحة',
+      'Product Sales صالحة',
+      'SKU مرتبط بـASIN بدون تعارض'
+    ];
+
+    for (let i = 0; i < rows.length; i++){
+      const row = rows[i];
+      const rowNumber = i + 1;
+
+      const skuDisplay = row[colMap['sku']] !== undefined && row[colMap['sku']] !== null ? String(row[colMap['sku']]).trim() : '';
+      const descDisplay = colMap['description'] && row[colMap['description']] !== undefined && row[colMap['description']] !== null
+        ? String(row[colMap['description']]).trim() : '';
+      const orderIdDisplay = row[colMap['order id']] !== undefined && row[colMap['order id']] !== null ? String(row[colMap['order id']]).trim() : '';
+      const traceFields = [
+        { label:'Date',             value: row[colMap['date/time']] !== undefined && row[colMap['date/time']] !== null ? String(row[colMap['date/time']]) : '' },
+        { label:'Transaction Type', value: row[colMap['type']] !== undefined && row[colMap['type']] !== null ? String(row[colMap['type']]) : '' },
+        { label:'Quantity',         value: row[colMap['quantity']] !== undefined && row[colMap['quantity']] !== null ? String(row[colMap['quantity']]) : '' },
+        { label:'Product Sales',    value: row[colMap['product sales']] !== undefined && row[colMap['product sales']] !== null ? String(row[colMap['product sales']]) : '' },
+        { label:'Order ID',         value: orderIdDisplay },
+      ];
+
+      const utcMs = this.parseAmazonTimestamp(row[colMap['date/time']]);
+      if (utcMs === null){
+        stats.invalidDateRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 0, false, 'تاريخ/وقت غير صالح', 0, 0));
+        continue;
+      }
+      const localDay = this.toRiyadhLocalDay(utcMs);
+      if (localDay < range.startTs || localDay > range.endTs){
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 0, false, 'خارج الفترة المختارة (Outside selected date)', 0, 0));
+        continue;
+      }
+      stats.inRangeRows++;
+
+      const txnType = row[colMap['type']] !== undefined && row[colMap['type']] !== null ? String(row[colMap['type']]).trim() : '';
+      if (!typeSet.has(txnType)){
+        stats.typeExcludedRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 1, false, `Transaction Type != ${[...typeSet].join('/')} (كانت: ${txnType || '(فارغة)'})`, 0, 0));
+        continue;
+      }
+      stats.typeMatchedRows++;
+
+      const qty = parseNumericCell(row[colMap['quantity']]);
+      if (qty === null){
+        stats.invalidQuantityRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 2, false, 'Quantity غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+      const sales = parseNumericCell(row[colMap['product sales']]);
+      if (sales === null){
+        stats.invalidSalesRows++;
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 3, false, 'Product Sales غير قابلة للتحويل لرقم', 0, 0));
+        continue;
+      }
+
+      const sku = row[colMap['sku']] !== undefined && row[colMap['sku']] !== null ? String(row[colMap['sku']]).trim() : '';
+
+      if (sku && mapping.conflicts.has(sku)){
+        stats.conflictRows++;
+        stats.conflictQty += qty;
+        stats.conflictSales += sales;
+        stats.conflictSkuSet.add(sku);
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 4, false, `SKU مرتبط بأكثر من ASIN مختلف (Mapping Conflict): ${[...mapping.conflicts.get(sku)].join(', ')}`, 0, 0));
+        continue;
+      }
+
+      const asin = sku ? mapping.clean.get(sku) : undefined;
+      if (!asin){
+        stats.unmatchedRows++;
+        stats.unmatchedQty += qty;
+        stats.unmatchedSales += sales;
+        if (sku) stats.unmatchedSkuSet.add(sku);
+        traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 4, false, 'SKU غير موجود في Business Report (Unmatched)', 0, 0));
+        continue;
+      }
+
+      if (!groups.has(asin)) groups.set(asin, { asin, qty:0, sales:0, title:'' });
+      const g = groups.get(asin);
+      g.qty += qty;
+      g.sales += sales;
+      if (!g.title && colMap['description']){
+        const desc = row[colMap['description']] !== undefined && row[colMap['description']] !== null
+          ? String(row[colMap['description']]).trim() : '';
+        if (desc) g.title = desc;
+      }
+
+      traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 5, true, null, qty, sales));
+    }
+
+    // Title priority: (1) transaction report's own description, (2) Business Report fallback
+    for (const g of groups.values()){
+      if (!g.title){
+        const fallback = mapping.asinFallbackTitles ? mapping.asinFallbackTitles.get(g.asin) : null;
+        if (fallback) g.title = fallback;
+      }
+    }
+
+    const results = Array.from(groups.values());
+    return { results, stats, trace:{ steps:traceSteps, entries:traceEntries } };
+  }
+};
+
+/* =========================================================================
+FILE PARSER MODULE
+========================================================================= */
+const FileParser = {
+  parseFile(file){
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.csv'))  return this._parseCsv(file);
+    if (name.endsWith('.xlsx')) return this._parseXlsx(file);
+    return Promise.reject(new Error('صيغة الملف غير مدعومة. الصيغ المدعومة: CSV، XLSX.'));
+  },
+
+  _parseCsv(file){
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        encoding: 'UTF-8',
+        complete: (res) => {
+          if (!res.data || res.data.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          const headers = res.meta.fields.map(h => h.trim());
+          resolve({ headers, rows:res.data, malformedRowCount:0 });
+        },
+        error: (err) => reject(new Error('تعذّرت قراءة الملف: ' + err.message)),
+      });
+    });
+  },
+
+  _parseXlsx(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try{
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type:'array', cellDates:true });
+          const sheetName = wb.SheetNames[0];
+          const ws = wb.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(ws, { defval:'', raw:true });
+          if (!rows || rows.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          const headers = Object.keys(rows[0]).map(h => h.trim());
+          resolve({ headers, rows, malformedRowCount:0, sheetName });
+        } catch(err){
+          reject(new Error('تعذّرت قراءة ملف Excel: ' + err.message));
+        }
+      };
+      reader.onerror = () => reject(new Error('تعذّرت قراءة الملف.'));
+      reader.readAsArrayBuffer(file);
+    });
+  },
+
+  // Raw rows as arrays-of-arrays — used for Amazon's Custom Transaction
+  // where an unknown number of metadata lines precede the real header row.
+  parseFileRaw(file){
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.csv'))  return this._parseCsvRaw(file);
+    if (name.endsWith('.xlsx')) return this._parseXlsxRaw(file);
+    return Promise.reject(new Error('صيغة الملف غير مدعومة. الصيغ المدعومة: CSV، XLSX.'));
+  },
+
+  _parseCsvRaw(file){
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: false,
+        skipEmptyLines: true,
+        encoding: 'UTF-8',
+        complete: (res) => {
+          if (!res.data || res.data.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          resolve({ aoa:res.data });
+        },
+        error: (err) => reject(new Error('تعذّرت قراءة الملف: ' + err.message)),
+      });
+    });
+  },
+
+  _parseXlsxRaw(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try{
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type:'array', cellDates:true });
+          const firstSheet = wb.SheetNames[0];
+          const ws = wb.Sheets[firstSheet];
+          const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:true, blankrows:false });
+          if (!aoa || aoa.length === 0){
+            reject(new Error('الملف فارغ ولا يحتوي على بيانات.'));
+            return;
+          }
+          resolve({ aoa });
+        } catch(err){
+          reject(new Error('تعذّرت قراءة ملف Excel: ' + err.message));
+        }
+      };
+      reader.onerror = () => reject(new Error('تعذّرت قراءة الملف.'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+};
+
+function rowsFromAOA(aoa, headerRowIdx){
+  const headers = (aoa[headerRowIdx] || []).map(h => String(h).trim());
+  const rows = aoa.slice(headerRowIdx + 1)
+    .filter(r => r && r.length > 0 && !(r.length === 1 && String(r[0]).trim() === ''))
+    .map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = r[idx] !== undefined ? r[idx] : ''; });
+      return obj;
+    });
+  return { headers, rows };
+}
+
+/* =========================================================================
+EXCEL EXPORTER MODULE
+========================================================================= */
+const ExcelExporter = {
+  exportResults(results, columns, summaryLines, sheetName){
+    const wb = XLSX.utils.book_new();
+
+    const header = columns.map(c => c.label);
+    const body = results.map(r => columns.map(c => {
+      const v = r[c.key];
+      if (c.type === 'dec') return Number(Number(v || 0).toFixed(2));
+      if (c.type === 'int') return Math.round(Number(v || 0));
+      return v;
+    }));
+    const ws1 = XLSX.utils.aoa_to_sheet([header, ...body]);
+
+    ws1['!cols'] = columns.map(c => ({ wch:c.type === 'text' ? Math.max(18, c.label.length + 8) : 18 }));
+
+    const numFmtInt = '#,##0';
+    const numFmtDec = '#,##0.00';
+    for (let r = 0; r < body.length; r++){
+      columns.forEach((c, ci) => {
+        if (c.type === 'int' || c.type === 'dec'){
+          const addr = XLSX.utils.encode_cell({ r:r + 1, c:ci });
+          if (ws1[addr]) ws1[addr].z = c.type === 'dec' ? numFmtDec : numFmtInt;
+        }
+      });
+    }
+
+    if (body.length > 0){
+      ws1['!autofilter'] = { ref:XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:body.length, c:columns.length-1} }) };
+    }
+    ws1['!freeze'] = { xSplit:0, ySplit:1, topLeftCell:'A2', activePane:'bottomLeft', state:'frozen' };
+
+    XLSX.utils.book_append_sheet(wb, ws1, sheetName || 'تحليل المبيعات');
+
+    const ws2 = XLSX.utils.aoa_to_sheet([['البند','القيمة'], ...summaryLines]);
+    ws2['!cols'] = [{wch:36},{wch:26}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'ملخص');
+
+    XLSX.writeFile(wb, 'تحليل_مبيعات_Amazon.xlsx');
+  }
+};
+
+/* =========================================================================
+APP STATE
+========================================================================= */
+const state = {
+  amazon: { mapping:null, txnRows:null, colMap:null },
+  dataDateBounds: null,
+  periodMode: 'date',
+  results: [],
+  summary: null,
+  sort: { key:'qty', dir:'desc' },
+  trace: null,
+};
+
+/* =========================================================================
+DOM REFERENCES
+========================================================================= */
+const dropzoneAmzBiz   = document.getElementById('dropzoneAmzBiz');
+const fileInputAmzBiz  = document.getElementById('fileInputAmzBiz');
+const fileStatusAmzBiz = document.getElementById('fileStatusAmzBiz');
+const dropzoneAmzTxn   = document.getElementById('dropzoneAmzTxn');
+const fileInputAmzTxn  = document.getElementById('fileInputAmzTxn');
+const fileStatusAmzTxn = document.getElementById('fileStatusAmzTxn');
+const stepPeriod       = document.getElementById('stepPeriod');
+const analyzeBtn       = document.getElementById('analyzeBtn');
+const analyzeError     = document.getElementById('analyzeError');
+
+/* =========================================================================
+DROPZONE WIRING
+========================================================================= */
+function wireDropzone(zoneEl, inputEl, onFile){
+  zoneEl.addEventListener('click', () => inputEl.click());
+  zoneEl.addEventListener('dragover', (e) => { e.preventDefault(); zoneEl.classList.add('drag'); });
+  zoneEl.addEventListener('dragleave', () => zoneEl.classList.remove('drag'));
+  zoneEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zoneEl.classList.remove('drag');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
+  });
+  inputEl.addEventListener('change', () => {
+    if (inputEl.files && inputEl.files[0]) onFile(inputEl.files[0]);
+  });
+}
+
+wireDropzone(dropzoneAmzBiz, fileInputAmzBiz, handleAmazonBizFile);
+wireDropzone(dropzoneAmzTxn, fileInputAmzTxn, handleAmazonTxnFile);
+
+function resetDownstream(){
+  document.getElementById('stepSummary').style.display = 'none';
+  document.getElementById('stepTable').style.display = 'none';
+  document.getElementById('stepInspect').style.display = 'none';
+  stepPeriod.classList.add('disabled');
+  analyzeBtn.disabled = true;
+  analyzeError.innerHTML = '';
+  document.getElementById('platformWarnings').innerHTML = '';
+  state.results = [];
+  state.summary = null;
+  state.trace = null;
+}
+
+function updateAmazonReadiness(){
+  const txnReady = !!state.amazon.txnRows;
+  const bizReady = !!state.amazon.mapping;
+  if (txnReady) stepPeriod.classList.remove('disabled'); else stepPeriod.classList.add('disabled');
+  analyzeBtn.disabled = !(txnReady && bizReady);
+}
+
+/* =========================================================================
+BUSINESS REPORT HANDLING
+========================================================================= */
+function handleAmazonBizFile(file){
+  resetDownstream();
+  state.amazon.mapping = null;
+  fileStatusAmzBiz.innerHTML = '';
+  const nameLower = file.name.toLowerCase();
+  if (!nameLower.endsWith('.csv') && !nameLower.endsWith('.xlsx')){
+    fileStatusAmzBiz.innerHTML = `<div class="file-status err">⚠ صيغة الملف غير مدعومة. الرجاء رفع CSV أو XLSX.</div>`;
+    updateAmazonReadiness();
+    return;
+  }
+  FileParser.parseFile(file).then(({headers, rows}) => {
+    const check = AmazonAnalyzer.validateBusinessReport(headers, rows);
+    if (!check.valid){
+      fileStatusAmzBiz.innerHTML = `<div class="file-status err">⚠ هذا لا يبدو ملف Business Report الصحيح — الأعمدة التالية غير موجودة: ${check.missing.join(', ')}. تأكد من رفع الملف الصحيح في المكان الصحيح.</div>`;
+      updateAmazonReadiness();
+      return;
+    }
+    const mapping = AmazonAnalyzer.buildMapping(rows, check.skuCol, check.asinCol, check.titleCol);
+    state.amazon.mapping = mapping;
+    let html = `<div class="file-status ok">✓ تم قراءة الملف بنجاح: <strong>${escapeHtml(file.name)}</strong> — ${rows.length.toLocaleString('en-US')} صف، ${mapping.clean.size.toLocaleString('en-US')} SKU مرتبط بنجاح بـASIN</div>`;
+    if (mapping.conflicts.size > 0){
+      html += `<div class="msg-note">تنبيه: ${mapping.conflicts.size.toLocaleString('en-US')} SKU مرتبط بأكثر من ASIN مختلف داخل هذا الملف. صفوف مبيعات هذه الـSKUs سيتم استبعادها من النتيجة الرئيسية وتوضيحها في الملخص.</div>`;
+    }
+    fileStatusAmzBiz.innerHTML = html;
+    updateAmazonReadiness();
+  }).catch(err => {
+    fileStatusAmzBiz.innerHTML = `<div class="file-status err">⚠ ${escapeHtml(err.message)}</div>`;
+    updateAmazonReadiness();
+  });
+}
+
+/* =========================================================================
+TRANSACTION REPORT HANDLING
+========================================================================= */
+function handleAmazonTxnFile(file){
+  resetDownstream();
+  state.amazon.txnRows = null;
+  state.amazon.colMap = null;
+  fileStatusAmzTxn.innerHTML = '';
+  const nameLower = file.name.toLowerCase();
+  if (!nameLower.endsWith('.csv') && !nameLower.endsWith('.xlsx')){
+    fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ صيغة الملف غير مدعومة. الرجاء رفع CSV أو XLSX.</div>`;
+    updateAmazonReadiness();
+    return;
+  }
+  FileParser.parseFileRaw(file).then(({aoa}) => {
+    const headerIdx = AmazonAnalyzer.detectTransactionHeaderRow(aoa);
+    if (headerIdx === -1){
+      fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ لم يتم العثور على صف العناوين المطلوب (date/time, sku, quantity, product sales) داخل هذا الملف. تأكد من رفع ملف Custom Transaction Report الصحيح.</div>`;
+      updateAmazonReadiness();
+      return;
+    }
+    const { headers, rows } = rowsFromAOA(aoa, headerIdx);
+    const check = AmazonAnalyzer.validateTransactionColumns(headers);
+    if (!check.valid){
+      fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ لا يمكن تحليل الملف. الأعمدة التالية غير موجودة: ${check.missing.join(', ')}</div>`;
+      updateAmazonReadiness();
+      return;
+    }
+    state.amazon.txnRows = rows;
+    state.amazon.colMap = check.colMap;
+    fileStatusAmzTxn.innerHTML = `<div class="file-status ok">✓ تم قراءة الملف بنجاح: <strong>${escapeHtml(file.name)}</strong> — ${rows.length.toLocaleString('en-US')} صف معاملة (تم اكتشاف صف العناوين تلقائيًا في السطر ${(headerIdx+1).toLocaleString('en-US')})</div>`;
+
+    const dayTsList = [];
+    for (const row of rows){
+      const utcMs = AmazonAnalyzer.parseAmazonTimestamp(row[check.colMap['date/time']]);
+      if (utcMs === null) continue;
+      dayTsList.push(AmazonAnalyzer.toRiyadhLocalDay(utcMs));
+    }
+    applyDateBoundsToUI(dayTsList);
+    updateAmazonReadiness();
+  }).catch(err => {
+    fileStatusAmzTxn.innerHTML = `<div class="file-status err">⚠ ${escapeHtml(err.message)}</div>`;
+    updateAmazonReadiness();
+  });
+}
+
+/* =========================================================================
+DATE BOUNDS → UI
+========================================================================= */
+const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function applyDateBoundsToUI(dayTsList){
+  let minTs = null, maxTs = null;
+  for (const ts of dayTsList){
+    if (minTs === null || ts < minTs) minTs = ts;
+    if (maxTs === null || ts > maxTs) maxTs = ts;
+  }
+  if (minTs === null){
+    state.dataDateBounds = null;
+    return;
+  }
+  state.dataDateBounds = { minTs, maxTs };
+
+  const minD = new Date(minTs), maxD = new Date(maxTs);
+  const toInputStr = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+
+  const dateFrom = document.getElementById('dateFrom');
+  const dateTo   = document.getElementById('dateTo');
+  dateFrom.min = toInputStr(minD); dateFrom.max = toInputStr(maxD);
+  dateTo.min   = toInputStr(minD); dateTo.max   = toInputStr(maxD);
+  dateFrom.value = toInputStr(minD);
+  dateTo.value   = toInputStr(maxD);
+
+  const monthFrom = document.getElementById('monthFrom');
+  const monthTo   = document.getElementById('monthTo');
+  monthFrom.innerHTML = ''; monthTo.innerHTML = '';
+
+  let y = minD.getUTCFullYear(), m = minD.getUTCMonth()+1;
+  const endY = maxD.getUTCFullYear(), endM = maxD.getUTCMonth()+1;
+  const opts = [];
+  while (y < endY || (y === endY && m <= endM)){
+    opts.push({ y, m, label:`${MONTH_NAMES_AR[m-1]} ${y}` });
+    m++; if (m > 12){ m = 1; y++; }
+  }
+  opts.forEach(o => {
+    const val = `${o.y}-${String(o.m).padStart(2,'0')}`;
+    monthFrom.appendChild(new Option(o.label, val));
+    monthTo.appendChild(new Option(o.label, val));
+  });
+  monthFrom.value = opts[0] ? `${opts[0].y}-${String(opts[0].m).padStart(2,'0')}` : '';
+  const last = opts[opts.length-1];
+  monthTo.value = last ? `${last.y}-${String(last.m).padStart(2,'0')}` : '';
+}
+
+/* =========================================================================
+PERIOD MODE TOGGLE
+========================================================================= */
+const modeDateBtn  = document.getElementById('modeDateBtn');
+const modeMonthBtn = document.getElementById('modeMonthBtn');
+const dateModeFields  = document.getElementById('dateModeFields');
+const monthModeFields = document.getElementById('monthModeFields');
+
+modeDateBtn.addEventListener('click', () => {
+  state.periodMode = 'date';
+  modeDateBtn.classList.add('active'); modeMonthBtn.classList.remove('active');
+  dateModeFields.style.display = 'flex'; monthModeFields.style.display = 'none';
+});
+modeMonthBtn.addEventListener('click', () => {
+  state.periodMode = 'month';
+  modeMonthBtn.classList.add('active'); modeDateBtn.classList.remove('active');
+  monthModeFields.style.display = 'flex'; dateModeFields.style.display = 'none';
+});
+
+/* =========================================================================
+RESOLVE RANGE
+========================================================================= */
+function resolveRange(){
+  if (state.periodMode === 'date'){
+    const fromVal = document.getElementById('dateFrom').value;
+    const toVal   = document.getElementById('dateTo').value;
+    if (!fromVal || !toVal) throw new Error('الرجاء تحديد تاريخ البداية وتاريخ النهاية.');
+    const [fy,fm,fd] = fromVal.split('-').map(Number);
+    const [ty,tm,td] = toVal.split('-').map(Number);
+    const startTs = utcDay(fy,fm,fd);
+    const endTs   = utcDay(ty,tm,td);
+    if (startTs > endTs) throw new Error('تاريخ البداية يجب أن يكون قبل تاريخ النهاية أو مساويًا له.');
+    return { startTs, endTs, label:`${fromVal} → ${toVal}` };
+  } else {
+    const fromVal = document.getElementById('monthFrom').value;
+    const toVal   = document.getElementById('monthTo').value;
+    if (!fromVal || !toVal) throw new Error('الرجاء تحديد شهر البداية وشهر النهاية.');
+    const [fy,fm] = fromVal.split('-').map(Number);
+    const [ty,tm] = toVal.split('-').map(Number);
+    const startTs = utcDay(fy,fm,1);
+    if (startTs > utcDay(ty,tm,1)) throw new Error('شهر البداية يجب أن يكون قبل شهر النهاية أو مساويًا له.');
+    const lastDay = new Date(Date.UTC(ty, tm, 0)).getUTCDate();
+    const endTs = utcDay(ty,tm,lastDay);
+    const fromLabel = `${MONTH_NAMES_AR[fm-1]} ${fy}`;
+    const toLabel   = `${MONTH_NAMES_AR[tm-1]} ${ty}`;
+    return { startTs, endTs, label:`${fromLabel} → ${toLabel}` };
+  }
+}
+
+/* =========================================================================
+ANALYZE
+========================================================================= */
+analyzeBtn.addEventListener('click', () => {
+  analyzeError.innerHTML = '';
+  document.getElementById('platformWarnings').innerHTML = '';
+
+  if (!state.amazon.txnRows){
+    analyzeError.innerHTML = `<div class="msg-error">لم يتم رفع ملف المبيعات (Custom Transaction Report) بعد.</div>`;
+    return;
+  }
+  if (!state.amazon.mapping){
+    analyzeError.innerHTML = `<div class="msg-error">لم يتم رفع ملف ربط المنتجات (Business Report) بعد.</div>`;
+    return;
+  }
+
+  let range;
+  try{
+    range = resolveRange();
+  } catch(err){
+    analyzeError.innerHTML = `<div class="msg-error">${escapeHtml(err.message)}</div>`;
+    return;
+  }
+
+  runAnalysis(range);
+});
+
+function showResultsSections(){
+  document.getElementById('stepSummary').style.display = 'block';
+  document.getElementById('stepTable').style.display = 'block';
+  document.getElementById('stepInspect').style.display = 'block';
+  document.getElementById('inspectSearchInput').value = '';
+  document.getElementById('inspectMatches').innerHTML = '';
+  document.getElementById('inspectPanel').innerHTML = '';
+  document.getElementById('stepSummary').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function runAnalysis(range){
+  const selectedTypes = AMAZON_CONFIG.selectedTransactionTypes;
+  const { results, stats, trace } = AmazonAnalyzer.analyze(
+    state.amazon.txnRows, state.amazon.colMap, state.amazon.mapping, range, selectedTypes
+  );
+
+  if (results.length === 0){
+    analyzeError.innerHTML = `
+      <div class="msg-error">
+        لا توجد بيانات مبيعات صالحة داخل الفترة المختارة بعد فلترة نوع المعاملة (${escapeHtml(selectedTypes.join(', '))}) والربط بـASIN. تحقق من الفترة أو من محتوى الملفين.
+        <div style="margin-top:10px; font-size:12.5px; opacity:.9;">
+          تفاصيل تشخيصية (بتوقيت السعودية) — من أصل ${stats.totalRows.toLocaleString('en-US')} صف في ملف المبيعات:
+          <br>• صفوف داخل الفترة المختارة: ${stats.inRangeRows.toLocaleString('en-US')}
+          <br>• صفوف مطابقة لنوع المعاملة المختار (${escapeHtml(selectedTypes.join(', '))}): ${stats.typeMatchedRows.toLocaleString('en-US')}
+          <br>• صفوف مستبعدة لأنها ليست ${escapeHtml(selectedTypes.join(', '))}: ${stats.typeExcludedRows.toLocaleString('en-US')}
+          <br>• صفوف بتاريخ/وقت غير صالح: ${stats.invalidDateRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة quantity غير صالحة: ${stats.invalidQuantityRows.toLocaleString('en-US')}
+          <br>• صفوف بقيمة product sales غير صالحة: ${stats.invalidSalesRows.toLocaleString('en-US')}
+          <br>• صفوف بدون SKU مطابق في Business Report: ${stats.unmatchedRows.toLocaleString('en-US')}
+          <br>• صفوف متأثرة بتعارض SKU→ASIN: ${stats.conflictRows.toLocaleString('en-US')}
+        </div>
+      </div>`;
+    document.getElementById('stepSummary').style.display = 'none';
+    document.getElementById('stepTable').style.display = 'none';
+    return;
+  }
+
+  const totalQty   = results.reduce((s,r) => s + r.qty, 0);
+  const totalSales = results.reduce((s,r) => s + r.sales, 0);
+
+  const excelLines = [
+    ['الفترة المختارة', range.label],
+    ['Timezone المستخدم', 'Saudi Arabia — Asia/Riyadh (UTC+3)'],
+    ['نوع المعاملة المستخدم', selectedTypes.join(', ')],
+    ['إجمالي الكمية المباعة', totalQty],
+    ['عدد ASINs المختلفة', results.length],
+    ['إجمالي Product Sales', Number(totalSales.toFixed(2))],
+    ['صفوف داخل الفترة (قبل فلتر نوع المعاملة)', stats.inRangeRows],
+    [`صفوف مستبعدة لأنها ليست ${selectedTypes.join(', ')}`, stats.typeExcludedRows],
+    ['صفوف بدون SKU مطابق', stats.unmatchedRows],
+    ['SKUs مختلفة غير مطابقة', stats.unmatchedSkuSet.size],
+    ['كمية غير مطابقة', stats.unmatchedQty],
+    ['قيمة مبيعات غير مطابقة', Number(stats.unmatchedSales.toFixed(2))],
+    ['صفوف متأثرة بتعارض SKU→ASIN', stats.conflictRows],
+    ['SKUs بها تعارض', stats.conflictSkuSet.size],
+  ];
+
+  state.summary = {
+    periodText: range.label,
+    selectedTypes,
+    totalQty,
+    totalProducts: results.length,
+    totalSales,
+    stats,
+    excelLines,
+  };
+  state.results = results;
+
+  let notes = [];
+  if (stats.invalidDateRows > 0) notes.push(`${stats.invalidDateRows} صف بتاريخ/وقت غير صالح تم تجاهله`);
+  if (stats.invalidQuantityRows > 0) notes.push(`${stats.invalidQuantityRows} صف بقيمة quantity غير صالحة تم تجاهله`);
+  if (stats.invalidSalesRows > 0) notes.push(`${stats.invalidSalesRows} صف بقيمة product sales غير صالحة تم تجاهله`);
+  if (notes.length){
+    analyzeError.innerHTML = `<div class="msg-note">ملاحظة: ${notes.join(' — ')}.</div>`;
+  }
+
+  state.trace = { platformLabel:'Amazon', steps:trace.steps, entries:trace.entries };
+
+  renderSummary();
+  state.sort = { key:'qty', dir:'desc' };
+  renderTable();
+  showResultsSections();
+}
+
+/* =========================================================================
+RENDER SUMMARY
+========================================================================= */
+function renderSummary(){
+  const s = state.summary;
+  document.getElementById('platformWarnings').innerHTML = '';
+  document.getElementById('periodLine').textContent = `الفترة التي تم تحليلها: ${s.periodText} — بتوقيت السعودية (Asia/Riyadh, UTC+3) — نوع المعاملة: ${s.selectedTypes.join(', ')}`;
+
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = `
+    <div class="summary-card">
+      <div class="label">إجمالي الكمية المباعة</div>
+      <div class="value num">${s.totalQty.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">عدد ASINs المختلفة</div>
+      <div class="value num">${s.totalProducts.toLocaleString('en-US')}</div>
+    </div>
+    <div class="summary-card" style="position:relative;">
+      <div class="stamp">إجمالي<br>مطابق</div>
+      <div class="label">إجمالي Product Sales</div>
+      <div class="value num">${formatNumber(s.totalSales)}</div>
+    </div>
+  `;
+
+  const excl = document.getElementById('exclLine');
+  excl.innerHTML = `
+    <span>صفوف مستبعدة لأنها ليست ${escapeHtml(s.selectedTypes.join(', '))}: <span class="num">${s.stats.typeExcludedRows.toLocaleString('en-US')}</span></span>
+    <span>صفوف بدون SKU مطابق: <span class="num">${s.stats.unmatchedRows.toLocaleString('en-US')}</span></span>
+    <span>صفوف متأثرة بتعارض SKU→ASIN: <span class="num">${s.stats.conflictRows.toLocaleString('en-US')}</span></span>
+  `;
+
+  // Amazon-specific warnings
+  const warnBox = document.getElementById('platformWarnings');
+  let html = '';
+  if (s.stats.unmatchedRows > 0){
+    const skuList = [...s.stats.unmatchedSkuSet].slice(0, 200);
+    html += `
+      <div class="warn-box">
+        <strong>SKUs غير موجودة في ملف Business Report</strong> — ${s.stats.unmatchedSkuSet.size.toLocaleString('en-US')} SKU مختلف، على ${s.stats.unmatchedRows.toLocaleString('en-US')} صف مبيعات
+        (كمية: ${s.stats.unmatchedQty.toLocaleString('en-US')} — قيمة: ${formatNumber(s.stats.unmatchedSales)}).
+        هذه الصفوف لم تُدخَل في النتيجة الرئيسية لعدم وجود ASIN مطابق لها.
+        <details class="sku-list">
+          <summary>عرض SKUs غير المطابقة (${skuList.length.toLocaleString('en-US')}${s.stats.unmatchedSkuSet.size > 200 ? '+' : ''})</summary>
+          <div class="list-body">${skuList.map(escapeHtml).join('<br>')}</div>
+        </details>
+      </div>`;
+  }
+  if (s.stats.conflictRows > 0){
+    const conflictList = [...s.stats.conflictSkuSet].slice(0, 200);
+    html += `
+      <div class="warn-box severe">
+        <strong>تعارض SKU → ASIN</strong> — ${s.stats.conflictSkuSet.size.toLocaleString('en-US')} SKU مرتبط بأكثر من Child ASIN مختلف داخل ملف Business Report، أثّر على ${s.stats.conflictRows.toLocaleString('en-US')} صف مبيعات
+        (كمية: ${s.stats.conflictQty.toLocaleString('en-US')} — قيمة: ${formatNumber(s.stats.conflictSales)}).
+        تم استبعاد هذه الصفوف من التحليل تفاديًا لأرقام غير دقيقة — راجع ملف الربط لهذه الـSKUs.
+        <details class="sku-list">
+          <summary>عرض SKUs المتعارضة (${conflictList.length.toLocaleString('en-US')}${s.stats.conflictSkuSet.size > 200 ? '+' : ''})</summary>
+          <div class="list-body">${conflictList.map(escapeHtml).join('<br>')}</div>
+        </details>
+      </div>`;
+  }
+  warnBox.innerHTML = html;
+}
+
+/* =========================================================================
+SORTING + TABLE
+========================================================================= */
+function getSortedResults(){
+  const { key, dir } = state.sort;
+  const col = RESULT_VIEW.columns.find(c => c.key === key) || RESULT_VIEW.columns[0];
+  const accessor = col.type === 'text'
+    ? (r => String(r[col.key] || '').toLowerCase())
+    : (r => Number(r[col.key]) || 0);
+  return [...state.results].sort((a,b) => {
+    const av = accessor(a), bv = accessor(b);
+    if (av < bv) return dir === 'asc' ? -1 : 1;
+    if (av > bv) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+function renderTable(){
+  const sorted = getSortedResults();
+
+  const thead = document.getElementById('resultsHead');
+  const headRow = document.createElement('tr');
+  RESULT_VIEW.columns.forEach(col => {
+    const th = document.createElement('th');
+    th.dataset.key = col.key;
+    th.innerHTML = `${escapeHtml(col.label)} <span class="arrow"></span>`;
+    th.addEventListener('click', () => {
+      if (state.sort.key === col.key){
+        state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sort = { key:col.key, dir:(col.type === 'int' || col.type === 'dec') ? 'desc' : 'asc' };
+      }
+      renderTable();
+    });
+    headRow.appendChild(th);
+  });
+  thead.innerHTML = '';
+  thead.appendChild(headRow);
+
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = sorted.map(r => {
+    const cells = RESULT_VIEW.columns.map(col => {
+      const v = r[col.key];
+      if (col.type === 'text') return `<td>${escapeHtml(v)}</td>`;
+      if (col.type === 'int')  return `<td class="num col-num">${Number(v).toLocaleString('en-US')}</td>`;
+      return `<td class="num col-num">${formatNumber(Number(v))}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('rowCount').textContent = `${sorted.length.toLocaleString('en-US')} ${RESULT_VIEW.resultNoun}`;
+
+  Array.from(thead.querySelectorAll('th')).forEach(th => {
+    const key = th.dataset.key;
+    const arrow = th.querySelector('.arrow');
+    arrow.textContent = key === state.sort.key ? (state.sort.dir === 'asc' ? '▲' : '▼') : '';
+  });
+
+  syncSortPresetDropdown();
+}
+
+const sortPresetEl = document.getElementById('sortPreset');
+sortPresetEl.addEventListener('change', () => {
+  const val = sortPresetEl.value;
+  if (val === 'qty_desc')        state.sort = { key:RESULT_VIEW.qtyKey,   dir:'desc' };
+  else if (val === 'value_desc') state.sort = { key:RESULT_VIEW.valueKey, dir:'desc' };
+  else if (val === 'qty_asc')    state.sort = { key:RESULT_VIEW.qtyKey,   dir:'asc'  };
+  else if (val === 'value_asc')  state.sort = { key:RESULT_VIEW.valueKey, dir:'asc'  };
+  renderTable();
+});
+
+function syncSortPresetDropdown(){
+  const { key, dir } = state.sort;
+  if (key === RESULT_VIEW.qtyKey   && dir === 'desc') sortPresetEl.value = 'qty_desc';
+  else if (key === RESULT_VIEW.valueKey && dir === 'desc') sortPresetEl.value = 'value_desc';
+  else if (key === RESULT_VIEW.qtyKey   && dir === 'asc')  sortPresetEl.value = 'qty_asc';
+  else if (key === RESULT_VIEW.valueKey && dir === 'asc')  sortPresetEl.value = 'value_asc';
+}
+
+/* =========================================================================
+EXPORT
+========================================================================= */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (!state.results.length) return;
+  const sorted = getSortedResults();
+  ExcelExporter.exportResults(sorted, RESULT_VIEW.columns, state.summary.excelLines, RESULT_VIEW.sheetName);
+});
+
+/* =========================================================================
+SEARCH & INSPECT
+========================================================================= */
+const inspectSearchInput = document.getElementById('inspectSearchInput');
+const inspectMatchesEl   = document.getElementById('inspectMatches');
+const inspectPanelEl     = document.getElementById('inspectPanel');
+
+inspectSearchInput.addEventListener('input', () => {
+  const q = inspectSearchInput.value.trim().toLowerCase();
+  inspectPanelEl.innerHTML = '';
+  if (!state.trace || q.length < 2){
+    inspectMatchesEl.innerHTML = '';
+    return;
+  }
+
+  const byKey = new Map();
+  for (const entry of state.trace.entries){
+    const hay = (entry.searchKey + ' ' + entry.title + ' ' + entry.orderId).toLowerCase();
+    if (!hay.includes(q)) continue;
+    if (!entry.searchKey) continue;
+    if (!byKey.has(entry.searchKey)){
+      byKey.set(entry.searchKey, { key:entry.searchKey, title:entry.title, count:0 });
+    }
+    const g = byKey.get(entry.searchKey);
+    g.count++;
+    if (!g.title && entry.title) g.title = entry.title;
+  }
+
+  const matches = Array.from(byKey.values()).slice(0, 30);
+  if (matches.length === 0){
+    inspectMatchesEl.innerHTML = `<div class="inspect-empty">لا توجد نتائج مطابقة.</div>`;
+    return;
+  }
+
+  inspectMatchesEl.innerHTML = `<div class="inspect-matches">${matches.map(m => `
+    <div class="inspect-match" data-key="${escapeHtml(m.key)}">
+      <div>
+        <div class="im-key">${escapeHtml(m.key)}</div>
+        ${m.title ? `<div class="im-title">${escapeHtml(m.title)}</div>` : ''}
+      </div>
+      <div class="im-count">${m.count.toLocaleString('en-US')} صف</div>
+    </div>
+  `).join('')}</div>`;
+
+  inspectMatchesEl.querySelectorAll('.inspect-match').forEach(el => {
+    el.addEventListener('click', () => openInspectPanel(el.dataset.key));
+  });
+});
+
+function openInspectPanel(searchKey){
+  if (!state.trace) return;
+  const rows = state.trace.entries.filter(e => e.searchKey === searchKey);
+  if (rows.length === 0) return;
+
+  const steps = state.trace.steps;
+  const title = rows.find(r => r.title)?.title || '';
+  const rowsFound = rows.length;
+  const afterCounts = steps.map((_, i) => rows.filter(r => r.passedSteps >= i + 1).length);
+  const finalQty   = rows.reduce((s,r) => s + r.qtyContribution, 0);
+  const totalSales = rows.reduce((s,r) => s + r.salesContribution, 0);
+
+  const fieldLabels = [];
+  rows.forEach(r => r.fields.forEach(f => { if (!fieldLabels.includes(f.label)) fieldLabels.push(f.label); }));
+
+  const stepsHtml = [
+    `<div class="is-row"><span class="is-label">Rows Found</span><span>${rowsFound.toLocaleString('en-US')}</span></div>`,
+    ...steps.map((label, i) => `<div class="is-row"><span class="is-label">After ${escapeHtml(label)}</span><span>${afterCounts[i].toLocaleString('en-US')}</span></div>`),
+    `<div class="is-row final"><span class="is-label">Final Quantity</span><span>${finalQty.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row final"><span class="is-label">Total Sales</span><span>${formatNumber(totalSales)}</span></div>`,
+  ].join('');
+
+  const rowsTableHtml = `
+    <table class="inspect-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          ${fieldLabels.map(l => `<th>${escapeHtml(l)}</th>`).join('')}
+          <th>Included</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => {
+          const cellsByLabel = {};
+          r.fields.forEach(f => { cellsByLabel[f.label] = f.value; });
+          const cells = fieldLabels.map(l => `<td>${escapeHtml(cellsByLabel[l] ?? '')}</td>`).join('');
+          const badge = r.included
+            ? `<span class="included-badge yes">✅ Included</span>`
+            : `<span class="included-badge no">❌ Excluded</span>`;
+          const reason = r.exclusionReason ? `<span class="exclusion-reason">${escapeHtml(r.exclusionReason)}</span>` : '—';
+          return `<tr class="${r.included ? '' : 'excluded'}"><td class="num">${r.rowIndex}</td>${cells}<td>${badge}</td><td>${reason}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  inspectPanelEl.innerHTML = `
+    <div class="inspect-panel">
+      <div class="inspect-panel-head">
+        <div>
+          <h3>Inspect Calculation — ${escapeHtml(searchKey)}</h3>
+          <div class="ip-sub">${title ? escapeHtml(title) + ' — ' : ''}Marketplace: ${escapeHtml(state.trace.platformLabel)}</div>
+        </div>
+        <button type="button" class="inspect-copy-btn" id="inspectCopyBtn">⧉ Copy Debug Data</button>
+      </div>
+      <div class="inspect-panel-body">
+        <div class="inspect-steps">${stepsHtml}</div>
+        <details class="inspect-rows-toggle" open>
+          <summary>عرض كل الصفوف (${rowsFound.toLocaleString('en-US')})</summary>
+          <div class="inspect-table-scroll">${rowsTableHtml}</div>
+        </details>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('inspectCopyBtn').addEventListener('click', (e) => {
+    const payload = {
+      searchKey, title, marketplace:state.trace.platformLabel,
+      rowsFound, steps:steps.map((label,i) => ({ label, rowsRemaining:afterCounts[i] })),
+      finalQuantity:finalQty, totalSales,
+      rows:rows.map(r => ({
+        row:r.rowIndex,
+        ...Object.fromEntries(r.fields.map(f => [f.label, f.value])),
+        included:r.included,
+        reason:r.exclusionReason || '',
+      })),
+    };
+    navigator.clipboard.writeText(JSON.stringify(payload, null, 2)).then(() => {
+      const btn = e.currentTarget;
+      const original = btn.textContent;
+      btn.textContent = '✓ تم النسخ';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+    });
+  });
+
+  inspectPanelEl.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+</script>
+</body>
+</html>
