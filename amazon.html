@@ -37,8 +37,6 @@ body{
   font-variant-numeric:tabular-nums;
   direction:ltr; unicode-bidi:isolate;
 }
-
-/* ---------- Header ---------- */
 header.top{
   display:flex; align-items:center; justify-content:space-between; gap:16px;
   padding:10px 0 26px;
@@ -61,8 +59,6 @@ header.top{
   border:1px dashed var(--line);
   padding:5px 10px; border-radius:20px; white-space:nowrap;
 }
-
-/* ---------- Section shell ---------- */
 .step{
   background:var(--paper-card);
   border:1px solid var(--line);
@@ -79,30 +75,11 @@ header.top{
 }
 .step-head h2{ font-size:16.5px; margin:0; font-weight:700; color:var(--ink); }
 .step.disabled{ opacity:.45; pointer-events:none; }
-
-/* ---------- Amazon dual upload ---------- */
-.amazon-file-group{
-  margin-bottom:18px;
-}
+.amazon-file-group{ margin-bottom:18px; }
 .amazon-file-group:last-child{ margin-bottom:0; }
-.amazon-file-group h3{
-  font-size:13.5px;
-  margin:0 0 3px;
-  color:var(--ink);
-  font-weight:700;
-}
-.amazon-file-group .hint{
-  font-size:12px;
-  color:var(--text-muted);
-  margin:0 0 10px;
-}
-.platform-hint{
-  font-size:12.5px;
-  color:var(--text-muted);
-  margin-bottom:14px;
-}
-
-/* ---------- Upload ---------- */
+.amazon-file-group h3{ font-size:13.5px; margin:0 0 3px; color:var(--ink); font-weight:700; }
+.amazon-file-group .hint{ font-size:12px; color:var(--text-muted); margin:0 0 10px; }
+.platform-hint{ font-size:12.5px; color:var(--text-muted); margin-bottom:14px; }
 .dropzone{
   border:2px dashed var(--line);
   border-radius:var(--radius);
@@ -119,8 +96,6 @@ header.top{
 }
 .file-status.ok{ background:#EAF3ED; color:var(--positive); }
 .file-status.err{ background:#F7E9E5; color:var(--danger); }
-
-/* ---------- Period selector ---------- */
 .mode-toggle{
   display:inline-flex;
   border:1.5px solid var(--line);
@@ -148,8 +123,6 @@ header.top{
 .field input:focus, .field select:focus{
   outline:2px solid var(--accent-soft); outline-offset:1px; border-color:var(--accent);
 }
-
-/* ---------- Buttons ---------- */
 .btn{
   font-family:'Tajawal', sans-serif;
   font-weight:700; font-size:14.5px;
@@ -174,8 +147,6 @@ header.top{
   border:1px solid var(--accent-soft); color:#7A5117;
   padding:10px 14px; border-radius:8px; font-size:12.5px;
 }
-
-/* ---------- Summary ---------- */
 .summary-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
@@ -217,8 +188,6 @@ header.top{
   margin-top:14px; font-size:12px; color:var(--text-muted);
   display:flex; gap:18px; flex-wrap:wrap;
 }
-
-/* ---------- Warning / disclosure (Amazon-specific) ---------- */
 .warn-box{
   margin-top:14px;
   background:#FBF3E8;
@@ -234,14 +203,8 @@ header.top{
   border-color:#E3B7A9;
   color:var(--danger);
 }
-details.sku-list{
-  margin-top:8px;
-}
-details.sku-list summary{
-  cursor:pointer;
-  font-weight:600;
-  color:inherit;
-}
+details.sku-list{ margin-top:8px; }
+details.sku-list summary{ cursor:pointer; font-weight:600; color:inherit; }
 details.sku-list .list-body{
   margin-top:8px;
   max-height:160px;
@@ -254,8 +217,6 @@ details.sku-list .list-body{
   direction:ltr;
   text-align:left;
 }
-
-/* ---------- Table ---------- */
 .table-scroll{
   overflow-x:auto;
   border:1px solid var(--line-soft);
@@ -290,8 +251,6 @@ tbody tr:hover{ background:#F3EEE0; }
 .sort-select:focus{
   outline:2px solid var(--accent-soft); outline-offset:1px; border-color:var(--accent);
 }
-
-/* ---------- Search & Inspect ---------- */
 #inspectSearchInput{
   font-family:'IBM Plex Mono', monospace;
   font-size:13.5px; padding:10px 12px;
@@ -387,12 +346,10 @@ table.inspect-table tbody tr:not(.excluded):hover{ background:#F3EEE0; }
 .included-badge.yes{ color:var(--positive); }
 .included-badge.no{ color:var(--danger); }
 .exclusion-reason{ color:var(--danger); font-size:11.5px; }
-
 footer.foot{
   text-align:center; color:var(--text-muted);
   font-size:12px; margin-top:34px;
 }
-
 @media (max-width:640px){
   .step{ padding:16px; }
   thead th, tbody td{ padding:8px 10px; font-size:12.5px; }
@@ -414,7 +371,6 @@ footer.foot{
   <div class="badge-ledger">لا تخزين • لا حسابات • خصوصية كاملة</div>
 </header>
 
-<!-- STEP 1: Upload (two files) -->
 <section class="step" id="stepUpload">
   <div class="step-head">
     <span class="step-num">01</span>
@@ -447,7 +403,6 @@ footer.foot{
   </div>
 </section>
 
-<!-- STEP 2: Period -->
 <section class="step disabled" id="stepPeriod">
   <div class="step-head">
     <span class="step-num">02</span>
@@ -483,7 +438,6 @@ footer.foot{
   <div id="analyzeError"></div>
 </section>
 
-<!-- STEP 3: Summary -->
 <section class="step" id="stepSummary" style="display:none;">
   <div class="step-head">
     <span class="step-num">03</span>
@@ -495,7 +449,6 @@ footer.foot{
   <div id="platformWarnings"></div>
 </section>
 
-<!-- STEP: Search & Inspect -->
 <section class="step" id="stepInspect" style="display:none;">
   <div class="step-head">
     <span class="step-num">🔍</span>
@@ -511,7 +464,6 @@ footer.foot{
   <div id="inspectPanel"></div>
 </section>
 
-<!-- STEP 4: Table -->
 <section class="step" id="stepTable" style="display:none;">
   <div class="step-head">
     <span class="step-num">04</span>
@@ -554,7 +506,7 @@ const AMAZON_CONFIG = {
 };
 
 /* =========================================================================
-RESULT VIEW (Amazon only)
+RESULT VIEW
 ========================================================================= */
 const RESULT_VIEW = {
   columns: [
@@ -588,8 +540,6 @@ function parseNumericCell(value){
   return isNaN(n) ? null : n;
 }
 
-// Case/whitespace-insensitive column name lookup: returns the ACTUAL header
-// string found in `headers` matching `name`, or null.
 function resolveColumnCI(headers, name){
   const target = name.trim().toLowerCase();
   const found = headers.find(h => String(h).trim().toLowerCase() === target);
@@ -609,21 +559,11 @@ AMAZON ANALYZER MODULE
 ========================================================================= */
 const MONTHS_EN_ABBR = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
-const AMAZON_TRANSACTION_TYPES = {
-  'Order':            { label:'المبيعات (Order)',        description:'معاملات بيع المنتجات — الطلبات الفعلية.', uncertain:false },
-  'Refund':           { label:'المرتجعات (Refund)',      description:'مبالغ مرتبطة برد قيمة الطلبات أو المنتجات للعملاء.', uncertain:false },
-  'Adjustment':       { label:'تسويات (Adjustment)',     description:'تعديلات مالية من Amazon على الحساب.', uncertain:true },
-  'Transfer':         { label:'تحويلات (Transfer)',      description:'تحويل رصيد الحساب إلى حساب البائع البنكي.', uncertain:true },
-  'Service Fee':      { label:'رسوم خدمة (Service Fee)', description:'رسوم خدمات عامة من Amazon.', uncertain:true },
-  'FBA Inventory Fee':{ label:'رسوم مخزون FBA',          description:'رسوم متعلقة بتخزين أو معالجة مخزون FBA.', uncertain:true },
-  'Shipping Services':{ label:'خدمات شحن',               description:'معاملة متعلقة بخدمات الشحن.', uncertain:true },
-  'Others':           { label:'أخرى (Others)',           description:'معاملات غير مصنّفة ضمن الأنواع الأخرى.', uncertain:true },
-};
+// ✅ إصلاح: حذف AMAZON_TRANSACTION_TYPES (كان dead code)
 
 const AmazonAnalyzer = {
-  RIYADH_OFFSET_MINUTES: 180, // Asia/Riyadh = UTC+3
+  RIYADH_OFFSET_MINUTES: 180,
 
-  // ---- Business Report (SKU -> Child ASIN mapping) ----
   resolveBusinessColumns(headers){
     const skuCol = resolveColumnCI(headers, 'SKU');
     const asinCandidates = ['asin (المنتج الفرعي)', '(child) asin', 'child asin', 'asin(child)'];
@@ -672,8 +612,8 @@ const AmazonAnalyzer = {
   },
 
   buildMapping(rows, skuCol, asinCol, titleCol){
-    const seen = new Map(); // sku -> Set(asin)
-    const businessTitles = new Map(); // sku -> title
+    const seen = new Map();
+    const businessTitles = new Map();
     for (const row of rows){
       const sku = row[skuCol] !== undefined && row[skuCol] !== null ? String(row[skuCol]).trim() : '';
       const asin = row[asinCol] !== undefined && row[asinCol] !== null ? String(row[asinCol]).trim() : '';
@@ -701,7 +641,6 @@ const AmazonAnalyzer = {
     return { clean, conflicts, businessTitles, asinFallbackTitles };
   },
 
-  // ---- Custom Transaction Report ----
   detectTransactionHeaderRow(aoa){
     const required = AMAZON_CONFIG.requiredTransactionColumns;
     const scanLimit = Math.min(aoa.length, 50);
@@ -754,6 +693,7 @@ const AmazonAnalyzer = {
     const stats = {
       totalRows: rows.length,
       inRangeRows: 0,
+      outOfRangeRows: 0,  // ✅ إصلاح: إضافة counter للصفوف خارج الفترة
       typeMatchedRows: 0,
       typeExcludedRows: 0,
       invalidDateRows: 0,
@@ -769,7 +709,7 @@ const AmazonAnalyzer = {
       conflictSkuSet: new Set(),
     };
 
-    const groups = new Map(); // asin -> { asin, qty, sales, title }
+    const groups = new Map();
     const traceEntries = [];
     const traceSteps = [
       'التاريخ داخل الفترة (بتوقيت الرياض)',
@@ -803,6 +743,7 @@ const AmazonAnalyzer = {
       }
       const localDay = this.toRiyadhLocalDay(utcMs);
       if (localDay < range.startTs || localDay > range.endTs){
+        stats.outOfRangeRows++;  // ✅ إصلاح: حساب الصفوف خارج الفترة
         traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 0, false, 'خارج الفترة المختارة (Outside selected date)', 0, 0));
         continue;
       }
@@ -863,7 +804,6 @@ const AmazonAnalyzer = {
       traceEntries.push(makeTraceEntry(rowNumber, skuDisplay, descDisplay, orderIdDisplay, traceFields, 5, true, null, qty, sales));
     }
 
-    // Title priority: (1) transaction report's own description, (2) Business Report fallback
     for (const g of groups.values()){
       if (!g.title){
         const fallback = mapping.asinFallbackTitles ? mapping.asinFallbackTitles.get(g.asin) : null;
@@ -931,8 +871,6 @@ const FileParser = {
     });
   },
 
-  // Raw rows as arrays-of-arrays — used for Amazon's Custom Transaction
-  // where an unknown number of metadata lines precede the real header row.
   parseFileRaw(file){
     const name = file.name.toLowerCase();
     if (name.endsWith('.csv'))  return this._parseCsvRaw(file);
@@ -1044,7 +982,6 @@ APP STATE
 ========================================================================= */
 const state = {
   amazon: { mapping:null, txnRows:null, colMap:null },
-  dataDateBounds: null,
   periodMode: 'date',
   results: [],
   summary: null,
@@ -1196,11 +1133,8 @@ function applyDateBoundsToUI(dayTsList){
     if (minTs === null || ts < minTs) minTs = ts;
     if (maxTs === null || ts > maxTs) maxTs = ts;
   }
-  if (minTs === null){
-    state.dataDateBounds = null;
-    return;
-  }
-  state.dataDateBounds = { minTs, maxTs };
+  if (minTs === null) return;
+  // ✅ إصلاح: حذف state.dataDateBounds (كان dead code)
 
   const minD = new Date(minTs), maxD = new Date(maxTs);
   const toInputStr = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
@@ -1332,6 +1266,7 @@ function runAnalysis(range){
         <div style="margin-top:10px; font-size:12.5px; opacity:.9;">
           تفاصيل تشخيصية (بتوقيت السعودية) — من أصل ${stats.totalRows.toLocaleString('en-US')} صف في ملف المبيعات:
           <br>• صفوف داخل الفترة المختارة: ${stats.inRangeRows.toLocaleString('en-US')}
+          <br>• صفوف خارج الفترة المختارة: ${stats.outOfRangeRows.toLocaleString('en-US')}
           <br>• صفوف مطابقة لنوع المعاملة المختار (${escapeHtml(selectedTypes.join(', '))}): ${stats.typeMatchedRows.toLocaleString('en-US')}
           <br>• صفوف مستبعدة لأنها ليست ${escapeHtml(selectedTypes.join(', '))}: ${stats.typeExcludedRows.toLocaleString('en-US')}
           <br>• صفوف بتاريخ/وقت غير صالح: ${stats.invalidDateRows.toLocaleString('en-US')}
@@ -1357,6 +1292,7 @@ function runAnalysis(range){
     ['عدد ASINs المختلفة', results.length],
     ['إجمالي Product Sales', Number(totalSales.toFixed(2))],
     ['صفوف داخل الفترة (قبل فلتر نوع المعاملة)', stats.inRangeRows],
+    ['صفوف خارج الفترة المختارة', stats.outOfRangeRows],
     [`صفوف مستبعدة لأنها ليست ${selectedTypes.join(', ')}`, stats.typeExcludedRows],
     ['صفوف بدون SKU مطابق', stats.unmatchedRows],
     ['SKUs مختلفة غير مطابقة', stats.unmatchedSkuSet.size],
@@ -1425,7 +1361,6 @@ function renderSummary(){
     <span>صفوف متأثرة بتعارض SKU→ASIN: <span class="num">${s.stats.conflictRows.toLocaleString('en-US')}</span></span>
   `;
 
-  // Amazon-specific warnings
   const warnBox = document.getElementById('platformWarnings');
   let html = '';
   if (s.stats.unmatchedRows > 0){
