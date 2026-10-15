@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دفتر — محلل مبيعات نون (تقارير التسوية)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  --ink:#16302A; --ink-soft:#24443A;
+  --paper:#F8F6F0; --paper-alt:#EFEAdd; --paper-card:#FFFFFF;
+  --line:#D9D2BE; --line-soft:#E7E2D2;
+  --accent:#C77D2E; --accent-soft:#E9BD84;
+  --positive:#2F6B4F; --danger:#A6402F; --warning:#B8860B;
+  --text:#1C241F; --text-muted:#64705F;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(22,48,42,0.06), 0 8px 24px -12px rgba(22,48,42,0.18);
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--paper);
+  background-image:linear-gradient(var(--line-soft) 1px, transparent 1px);
+  background-size:100% 42px;
+  color:var(--text);
+  font-family:'Tajawal', sans-serif;
+  min-height:100vh;
+  line-height:1.55;
+}
+.wrap{ max-width:1100px; margin:0 auto; padding:28px 20px 80px; }
+.num{
+  font-family:'IBM Plex Mono', monospace;
+  font-variant-numeric:tabular-nums;
+  direction:ltr; unicode-bidi:isolate;
+}
+
+/* ---------- Header ---------- */
+header.top{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:10px 0 26px;
+  border-bottom:2px solid var(--ink);
+  margin-bottom:30px;
+}
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand-mark{
+  width:38px; height:38px; border-radius:50%;
+  border:2px solid var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600; color:var(--ink); font-size:14px; flex-shrink:0;
+}
+.brand h1{ font-size:20px; margin:0; font-weight:800; color:var(--ink); letter-spacing:.2px; }
+.brand p{ margin:0; font-size:12.5px; color:var(--text-muted); }
+.badge-ledger{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px; color:var(--text-muted);
+  border:1px dashed var(--line);
+  padding:5px 10px; border-radius:20px; white-space:nowrap;
+}
+
+/* ---------- Section shell ---------- */
+.step{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px 24px;
+  margin-bottom:20px;
+}
+.step-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:16px; }
+.step-num{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px; color:var(--accent); font-weight:600;
+  border-bottom:2px solid var(--accent-soft); padding-bottom:2px;
+}
+.step-head h2{ font-size:16.5px; margin:0; font-weight:700; color:var(--ink); }
+.step.disabled{ opacity:.45; pointer-events:none; }
+.hidden{ display:none !important; }
+
+/* ---------- Upload ---------- */
+.dropzone{
+  border:2px dashed var(--line);
+  border-radius:var(--radius);
+  padding:30px 20px; text-align:center; cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.dropzone:hover, .dropzone.drag{ border-color:var(--accent); background:#FBF3E8; }
+.dropzone input{ display:none; }
+.dropzone .icon{ font-size:26px; margin-bottom:6px; }
+.dropzone .hint{ font-size:12.5px; color:var(--text-muted); margin-top:4px; }
+
+/* ---------- File list ---------- */
+.file-list{ margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+.file-item{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--paper);
+  border:1px solid var(--line-soft);
+  border-radius:8px; padding:10px 14px;
+  font-size:13px;
+}
+.file-item .fname{ font-weight:600; color:var(--ink); }
+.file-item .fmeta{ color:var(--text-muted); font-size:12px; display:flex; gap:12px; flex-wrap:wrap; margin-top:3px; }
+.file-item .fremove{
+  background:transparent; border:none;
+  color:var(--danger); cursor:pointer;
+  font-size:13px; font-weight:600;
+  padding:4px 8px; flex-shrink:0;
+}
+.file-item .fremove:hover{ text-decoration:underline; }
+
+/* ---------- Messages ---------- */
+.msg{ margin-top:12px; padding:12px 14px; border-radius:8px; font-size:13px; line-height:1.6; }
+.msg-error{ background:#F7E9E5; border:1px solid #E3B7A9; color:var(--danger); }
+.msg-warning{ background:#FBF3E8; border:1px solid var(--accent-soft); color:#7A5117; }
+.msg-success{ background:#EAF3ED; border:1px solid #A8D5BA; color:var(--positive); }
+.msg-info{ background:#EEF3F8; border:1px solid #B8C9DB; color:#1E4A7A; }
+
+/* ---------- Buttons ---------- */
+.btn{
+  font-family:'Tajawal', sans-serif;
+  font-weight:700; font-size:14.5px;
+  border-radius:9px; padding:12px 26px;
+  border:none; cursor:pointer;
+  transition:transform .08s, box-shadow .15s;
+}
+.btn:active{ transform:translateY(1px); }
+.btn-primary{ background:var(--ink); color:#fff; }
+.btn-primary:hover{ background:var(--ink-soft); }
+.btn-primary:disabled{ background:#B9C2BB; cursor:not-allowed; }
+.btn-accent{ background:var(--accent); color:#fff; }
+.btn-accent:hover{ filter:brightness(1.05); }
+.btn-sm{ padding:6px 14px; font-size:12.5px; }
+.btn-danger{ background:var(--danger); color:#fff; padding:6px 12px; font-size:12px; }
+
+/* ---------- Summary ---------- */
+.summary-card{
+  background:var(--paper);
+  border:1px solid var(--line-soft);
+  border-radius:9px;
+  padding:14px 16px; position:relative;
+  margin-bottom:14px;
+}
+.summary-card .label{
+  font-size:11.5px; color:var(--text-muted);
+  font-weight:600; margin-bottom:6px;
+}
+.summary-card .value{ font-size:21px; font-weight:600; color:var(--ink); }
+.stamp{
+  position:absolute; top:-14px; left:-10px;
+  width:56px; height:56px; border-radius:50%;
+  border:2px dashed var(--positive); color:var(--positive);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:9px; font-weight:600;
+  transform:rotate(-14deg);
+  background:rgba(47,107,79,0.06);
+  text-align:center; line-height:1.15;
+  animation:stampIn .35s ease-out;
+}
+.stamp.failed{ border-color:var(--danger); color:var(--danger); background:rgba(166,64,47,0.06); }
+@keyframes stampIn{
+  from{ transform:rotate(-14deg) scale(0.4); opacity:0; }
+  to{ transform:rotate(-14deg) scale(1); opacity:1; }
+}
+
+/* ---------- Tabs ---------- */
+.tabs{ display:flex; gap:6px; border-bottom:2px solid var(--line-soft); margin-bottom:18px; flex-wrap:wrap; }
+.tab-btn{
+  padding:9px 18px; border:none; background:none;
+  font-family:'Tajawal', sans-serif;
+  font-weight:600; font-size:13.5px;
+  color:var(--text-muted); cursor:pointer;
+  border-bottom:3px solid transparent; margin-bottom:-2px;
+}
+.tab-btn.active{ color:var(--ink); border-bottom-color:var(--accent); }
+.tab-content{ display:none; }
+.tab-content.active{ display:block; }
+
+/* ---------- Tables ---------- */
+.table-scroll{
+  overflow-x:auto;
+  border:1px solid var(--line-soft);
+  border-radius:9px;
+}
+table{ border-collapse:collapse; width:100%; min-width:520px; font-size:13.5px; }
+thead th{
+  background:var(--ink); color:#fff;
+  padding:11px 14px; text-align:right;
+  font-weight:700; white-space:nowrap;
+  position:sticky; top:0;
+}
+tbody td{ padding:10px 14px; border-bottom:1px solid var(--line-soft); }
+tbody tr:nth-child(even){ background:#FBFAF6; }
+tbody tr:hover{ background:#F3EEE0; }
+.col-num{ text-align:left; }
+
+.monthly-table{ width:100%; border-collapse:collapse; }
+.monthly-table th{
+  background:var(--ink); color:#fff;
+  padding:10px 12px; text-align:right; font-weight:700;
+}
+.monthly-table td{ padding:9px 12px; border-bottom:1px solid var(--line-soft); }
+.monthly-table tr.total-row{ background:#EEF3F8; font-weight:700; }
+.monthly-table tr.total-row td{ border-top:2px solid var(--ink); }
+
+/* ---------- Formula box ---------- */
+.formula-box{
+  background:#EEF3F8;
+  border:2px solid #B8C9DB;
+  border-radius:8px;
+  padding:14px; margin:14px 0;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px; direction:ltr; text-align:left;
+}
+.formula-box .formula{ color:#1E4A7A; font-weight:600; }
+.formula-box .result{ color:var(--positive); font-weight:700; font-size:15px; }
+
+/* ---------- Validation ---------- */
+.validation-list{ display:flex; flex-direction:column; gap:8px; }
+.validation-item{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  background:var(--paper);
+  border:1px solid var(--line-soft);
+  border-radius:8px;
+  font-size:13px;
+}
+.validation-icon{ font-size:16px; flex-shrink:0; }
+
+/* ---------- Download area ---------- */
+.download-area{
+  margin-top:22px; padding:20px;
+  background:var(--paper);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.download-area h3{ margin:0 0 14px; font-size:15px; color:var(--ink); }
+.filename-row{
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  padding-top:14px; border-top:1px dashed var(--line);
+}
+.filename-row label{ font-size:13px; font-weight:600; color:var(--text-muted); }
+.filename-input{
+  flex:1; min-width:250px;
+  padding:9px 12px;
+  border:1.5px solid var(--line);
+  border-radius:7px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px; direction:ltr; text-align:right;
+}
+.filename-input:focus{ outline:2px solid var(--accent-soft); border-color:var(--accent); }
+.filename-hint{ font-size:11.5px; color:var(--text-muted); margin-top:6px; }
+
+/* ---------- Modal ---------- */
+.modal-overlay{
+  position:fixed; inset:0;
+  background:rgba(22,48,42,0.5);
+  display:flex; align-items:center; justify-content:center;
+  z-index:1000;
+}
+.modal{
+  background:var(--paper-card);
+  border-radius:12px;
+  padding:24px;
+  max-width:500px; width:90%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+}
+.modal h3{ margin:0 0 14px; color:var(--ink); }
+.modal input{
+  width:100%; padding:10px 12px;
+  border:1.5px solid var(--line);
+  border-radius:7px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px; margin-bottom:14px;
+  direction:ltr; text-align:right;
+}
+.modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
+
+/* ---------- Search & Inspect ---------- */
+#inspectSearchInput{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13.5px; padding:10px 12px;
+  border-radius:8px; border:1.5px solid var(--line);
+  background:#fff; width:100%;
+  direction:ltr; text-align:right;
+}
+#inspectSearchInput:focus{
+  outline:2px solid var(--accent-soft); outline-offset:1px; border-color:var(--accent);
+}
+.inspect-matches{
+  margin-top:10px; display:flex; flex-direction:column; gap:6px;
+  max-height:260px; overflow-y:auto;
+}
+.inspect-match{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:var(--paper);
+  border:1px solid var(--line-soft);
+  border-radius:7px; padding:9px 13px;
+  cursor:pointer; font-size:13px; text-align:right;
+}
+.inspect-match:hover{ border-color:var(--accent-soft); background:#FBF3E8; }
+.inspect-match .im-key{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--ink); direction:ltr; }
+.inspect-match .im-title{ color:var(--text-muted); font-size:12px; }
+.inspect-match .im-count{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-muted); flex-shrink:0; }
+.inspect-empty{ margin-top:10px; font-size:12.5px; color:var(--text-muted); }
+.inspect-panel{
+  margin-top:18px;
+  border:1.5px solid var(--ink);
+  border-radius:10px; overflow:hidden;
+}
+.inspect-panel-head{
+  background:var(--ink); color:#fff;
+  padding:14px 18px;
+  display:flex; justify-content:space-between;
+  align-items:flex-start; gap:12px; flex-wrap:wrap;
+}
+.inspect-panel-head h3{ margin:0 0 4px; font-size:15px; }
+.inspect-panel-head .ip-sub{ font-size:12px; opacity:.85; }
+.inspect-panel-body{ padding:18px; background:#fff; }
+.inspect-copy-btn{
+  background:var(--accent); color:#fff;
+  border:none; border-radius:7px;
+  padding:8px 14px;
+  font-family:'Tajawal', sans-serif;
+  font-weight:700; font-size:12.5px;
+  cursor:pointer; flex-shrink:0;
+}
+.inspect-copy-btn:hover{ filter:brightness(1.05); }
+.inspect-copy-btn.copied{ background:var(--positive); }
+.inspect-steps{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  background:var(--paper);
+  border:1px dashed var(--line);
+  border-radius:8px;
+  padding:14px 16px; line-height:2;
+}
+.inspect-steps .is-row{ display:flex; justify-content:space-between; gap:10px; }
+.inspect-steps .is-row.final{
+  font-weight:700; color:var(--ink);
+  border-top:1px dashed var(--line);
+  margin-top:6px; padding-top:8px;
+}
+.inspect-steps .is-label{ color:var(--text-muted); }
+.inspect-steps .is-row.final .is-label{ color:var(--ink); }
+.inspect-rows-toggle summary{
+  cursor:pointer; font-weight:700; color:var(--ink);
+  margin-top:18px; font-size:13.5px;
+}
+.inspect-table-scroll{
+  margin-top:10px; overflow-x:auto;
+  border:1px solid var(--line-soft);
+  border-radius:8px; max-height:420px; overflow-y:auto;
+}
+table.inspect-table{
+  border-collapse:collapse; width:100%;
+  min-width:640px; font-size:12.5px;
+}
+table.inspect-table thead th{
+  background:var(--paper-alt); color:var(--ink);
+  position:sticky; top:0;
+  padding:9px 10px; text-align:right; white-space:nowrap;
+  border-bottom:1.5px solid var(--line);
+}
+table.inspect-table tbody td{
+  padding:8px 10px; border-bottom:1px solid var(--line-soft); white-space:nowrap;
+}
+table.inspect-table tbody tr.excluded{ background:#FBF4F1; }
+table.inspect-table tbody tr.excluded:hover{ background:#F7E9E5; }
+table.inspect-table tbody tr:not(.excluded):hover{ background:#F3EEE0; }
+.included-badge{ font-weight:700; }
+.included-badge.yes{ color:var(--positive); }
+.included-badge.no{ color:var(--danger); }
+.exclusion-reason{ color:var(--danger); font-size:11.5px; }
+
+footer.foot{
+  text-align:center; color:var(--text-muted);
+  font-size:12px; margin-top:34px;
+}
+
+@media (max-width:640px){
+  .step{ padding:16px; }
+  thead th, tbody td{ padding:8px 10px; font-size:12.5px; }
+  .brand h1{ font-size:17px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark">ن</div>
+    <div>
+      <h1>محلل مبيعات نون — تقارير التسوية</h1>
+      <p>صافي المبيعات فقط — بدون مرتجعات أشهر سابقة — استبعاد الرسوم تلقائيًا</p>
+    </div>
+  </div>
+  <div class="badge-ledger">لا تخزين • لا حسابات • خصوصية كاملة</div>
+</header>
+
+<!-- STEP 1: Upload -->
+<section class="step" id="stepUpload">
+  <div class="step-head">
+    <span class="step-num">01</span>
+    <h2>رفع ملفات التسوية</h2>
+  </div>
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple />
+    <div class="icon">📂</div>
+    <div><strong>اسحب الملفات هنا أو اضغط للاختيار</strong></div>
+    <div class="hint">CSV / XLSX / XLS — يمكن رفع عدة ملفات (أشهر مختلفة) — الأعمدة المطلوبة: Document Type, Document Subtype, Transaction Type, Document Date, Source Doc Nr, SKU, Description, Price Including VAT (Document Currency)</div>
+  </div>
+  <div id="fileList" class="file-list"></div>
+  <div id="uploadMsg"></div>
+</section>
+
+<!-- STEP 2: Analyze -->
+<section class="step hidden" id="stepAnalyze">
+  <div class="step-head">
+    <span class="step-num">02</span>
+    <h2>بدء التحليل</h2>
+  </div>
+  <button class="btn btn-primary" id="runAnalysisBtn">⚙️ بدء التحليل الكامل</button>
+  <div id="analysisProgress" class="hidden msg msg-info">⏳ جاري معالجة البيانات...</div>
+</section>
+
+<!-- STEP 3: Results -->
+<section class="step hidden" id="stepResults">
+  <div class="step-head">
+    <span class="step-num">03</span>
+    <h2>التقرير النهائي</h2>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tabSummary">الملخص الشهري</button>
+    <button class="tab-btn" data-tab="tabProducts">تحليل المنتجات (الصافي)</button>
+    <button class="tab-btn" data-tab="tabValidation">اختبارات الصحة</button>
+  </div>
+
+  <div id="tabSummary" class="tab-content active">
+    <div id="monthlyTable"></div>
+    <div id="formulaBox"></div>
+  </div>
+
+  <div id="tabProducts" class="tab-content">
+    <div class="table-scroll">
+      <table id="productsTable">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>اسم المنتج</th>
+            <th>الشهر</th>
+            <th>الكمية الصافية</th>
+            <th>المبيعات الصافية</th>
+          </tr>
+        </thead>
+        <tbody id="productsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tabValidation" class="tab-content">
+    <div id="validationList"></div>
+  </div>
+
+  <!-- Search & Inspect -->
+  <div style="margin-top:24px; padding-top:20px; border-top:1px dashed var(--line);">
+    <div class="step-head">
+      <span class="step-num">🔍</span>
+      <h2>Search &amp; Inspect</h2>
+    </div>
+    <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px;">
+      ابحث بـ SKU، أو جزء من اسم المنتج، أو رقم الطلب — لمعرفة بالتفصيل كيف وصلت الأداة للنتيجة النهائية لهذا العنصر تحديدًا.
+    </p>
+    <div style="max-width:420px;">
+      <input type="text" id="inspectSearchInput" placeholder="ابحث بـ SKU / اسم المنتج / رقم الطلب..." autocomplete="off">
+    </div>
+    <div id="inspectMatches"></div>
+    <div id="inspectPanel"></div>
+  </div>
+
+  <!-- Download -->
+  <div class="download-area">
+    <h3>📥 تنزيل التقرير</h3>
+    <div class="filename-row">
+      <label for="defaultFilename">اسم الملف:</label>
+      <input type="text" id="defaultFilename" class="filename-input" value="">
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn btn-accent" id="downloadBtn">📋 تنزيل التقرير (ملف واحد)</button>
+    </div>
+    <div class="filename-hint">💡 الملف سيحتوي على شيت "الإجماليات" + شيت لكل شهر</div>
+  </div>
+</section>
+
+<footer class="foot">تتم كل المعالجة محليًا داخل المتصفح — لا يتم رفع أي بيانات إلى أي خادم.</footer>
+
+</div>
+
+<!-- Download Modal -->
+<div id="filenameModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3>تنزيل التقرير</h3>
+    <p style="font-size:13px; color:var(--text-muted); margin:0 0 10px;">اسم الملف (بدون امتداد):</p>
+    <input type="text" id="modalFilename" />
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirmDownloadBtn">تنزيل</button>
+      <button class="btn btn-sm" style="background:var(--text-muted); color:#fff;" id="closeModalBtn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+STATE
+========================================================================= */
+const state = { files: [], analysis: null, trace: null };
+let fileIdCounter = 0;
+
+const MONTH_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+/* =========================================================================
+UTILITIES
+========================================================================= */
+function round2(n){ return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
+function fmtNum(n){ return Number(n).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+
+function parseNumeric(v){
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number') return isNaN(v) ? null : v;
+  const s = String(v).trim().replace(/,/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function parseDate(v){
+  if (!v) return null;
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === 'number'){
+    const d = XLSX.SSF.parse_date_code(v);
+    if (d) return new Date(d.y, d.m-1, d.d);
+  }
+  if (typeof v === 'string'){
+    const s = v.trim();
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+    if (m){
+      let p1=+m[1], p2=+m[2], p3=+m[3];
+      if (p3 < 100) p3 += 2000;
+      if (p1 > 12) return new Date(p3, p2-1, p1);
+      return new Date(p3, p1-1, p2);
+    }
+  }
+  return null;
+}
+
+function findCol(headers, candidates){
+  const lower = headers.map(h => String(h).trim().toLowerCase().replace(/\s+/g, ' '));
+  for (const c of candidates){
+    const t = c.trim().toLowerCase();
+    const idx = lower.findIndex(h => h === t || h.includes(t));
+    if (idx !== -1) return headers[idx];
+  }
+  return null;
+}
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function sortByMonth(summaries){
+  return [...summaries].sort((a, b) => {
+    const getMonthNum = (month) => {
+      const idx = MONTH_AR.findIndex(m => month.includes(m));
+      return idx !== -1 ? idx + 1 : 0;
+    };
+    const ma = getMonthNum(a.month), mb = getMonthNum(b.month);
+    if (ma !== mb) return ma - mb;
+    const ya = parseInt(a.month.match(/\d{4}/)?.[0] || 0);
+    const yb = parseInt(b.month.match(/\d{4}/)?.[0] || 0);
+    return ya - yb;
+  });
+}
+
+function makeSafeSheetName(baseName, usedNames){
+  let name = baseName.replace(/\s+/g, '_').substring(0, 28);
+  let finalName = name;
+  let counter = 2;
+  while (usedNames.has(finalName)){
+    finalName = (name + '_' + counter).substring(0, 31);
+    counter++;
+  }
+  usedNames.add(finalName);
+  return finalName;
+}
+
+/* =========================================================================
+FEE CLASSIFICATION
+========================================================================= */
+const FEE_KEYWORDS = [
+  'fbn', 'storage charge', 'storage subsidy', 'subsidy noon',
+  'removal fee', 'rtv removal', 'statement fee', 'service fee',
+  'long term storage', 'non-saleable', 'monthly storage',
+  'ageing storage', 'commission', 'advertising fee', 'referral fee',
+  'directship', 'outbound fee', 'return refund', 'rebates',
+  'damaged returns', 'minutes coupon', 'returnless refund'
+];
+
+function isFeeDescription(desc){
+  if (!desc) return false;
+  const lowerDesc = desc.toLowerCase();
+  return FEE_KEYWORDS.some(keyword => lowerDesc.includes(keyword));
+}
+
+/* =========================================================================
+ROW CLASSIFICATION
+========================================================================= */
+function classifyRow(row, cols){
+  const docType = cols.documentTypeCol ? String(row[cols.documentTypeCol] || '').trim().toLowerCase() : '';
+  const docSubtype = cols.documentSubtypeCol ? String(row[cols.documentSubtypeCol] || '').trim().toLowerCase() : '';
+  const transType = cols.transactionTypeCol ? String(row[cols.transactionTypeCol] || '').trim().toLowerCase() : '';
+  const desc = cols.descriptionCol ? String(row[cols.descriptionCol] || '').trim() : '';
+
+  if (isFeeDescription(desc)) return 'fee';
+  if (docType.includes('creditnote') || docSubtype.includes('purchase return summary')) return 'return';
+  if (transType === 'statement fee' || transType === 'service fee') return 'fee';
+  if (docType === 'invoice' && docSubtype.includes('purchase summary') && transType === 'customer') return 'sale';
+  return 'other';
+}
+
+/* =========================================================================
+FILE PARSING
+========================================================================= */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+function showMsg(containerId, text, type){
+  const div = document.createElement('div');
+  div.className = `msg msg-${type}`;
+  div.textContent = text;
+  document.getElementById(containerId).appendChild(div);
+}
+
+function handleFiles(fileList){
+  document.getElementById('uploadMsg').innerHTML = '';
+  Array.from(fileList).forEach(file => {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['csv','xlsx','xls'].includes(ext)){
+      showMsg('uploadMsg', `ملف غير مدعوم: ${file.name}`, 'error');
+      return;
+    }
+    const isDuplicate = state.files.some(f => f.originalName === file.name && f.size === file.size);
+    if (isDuplicate){
+      showMsg('uploadMsg', `⚠️ الملف "${file.name}" مرفوع مسبقًا — تم تجاهله`, 'warning');
+      return;
+    }
+    parseFile(file, ext);
+  });
+}
+
+function parseFile(file, ext){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try{
+      let rows = [], headers = [];
+      if (ext === 'csv'){
+        const result = Papa.parse(e.target.result, { header:true, skipEmptyLines:true, encoding:'UTF-8' });
+        headers = result.meta.fields.map(h => h.trim());
+        rows = result.data;
+      } else {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type:'array', cellDates:true, raw:true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { defval:'', raw:true });
+        if (rows.length > 0) headers = Object.keys(rows[0]).map(h => h.trim());
+      }
+      if (rows.length === 0){
+        showMsg('uploadMsg', `الملف فارغ: ${file.name}`, 'error');
+        return;
+      }
+      const info = analyzeStructure(file.name, headers, rows);
+      info.id = ++fileIdCounter;
+      info.originalName = file.name;
+      info.size = file.size;
+      state.files.push(info);
+      renderFileList();
+      document.getElementById('stepAnalyze').classList.remove('hidden');
+      showMsg('uploadMsg', `✓ تم قراءة الملف: ${file.name} — ${rows.length.toLocaleString('en-US')} صف`, 'success');
+    } catch(err){
+      showMsg('uploadMsg', `خطأ في ${file.name}: ${err.message}`, 'error');
+      console.error(err);
+    }
+  };
+  if (ext === 'csv') reader.readAsText(file); else reader.readAsArrayBuffer(file);
+}
+
+function analyzeStructure(filename, headers, rows){
+  const cols = {
+    documentTypeCol: findCol(headers, ['Document Type']),
+    documentSubtypeCol: findCol(headers, ['Document Subtype']),
+    transactionTypeCol: findCol(headers, ['Transaction Type']),
+    documentDateCol: findCol(headers, ['Document Date']),
+    sourceDocNrCol: findCol(headers, ['Source Doc Nr']),
+    skuCol: findCol(headers, ['SKU']),
+    descriptionCol: findCol(headers, ['Description']),
+    priceInclVatDocCol: findCol(headers, ['Price Including VAT (Document Currency)'])
+  };
+  let minDate=null, maxDate=null, validDates=0, invalidDates=0;
+  rows.forEach(r => {
+    const d = cols.documentDateCol ? parseDate(r[cols.documentDateCol]) : null;
+    if (d){ validDates++; if (!minDate || d < minDate) minDate = d; if (!maxDate || d > maxDate) maxDate = d; }
+    else invalidDates++;
+  });
+  const detectedMonth = minDate ? minDate.getMonth()+1 : null;
+  const detectedYear = minDate ? minDate.getFullYear() : null;
+  return { headers, rows, rowCount:rows.length, detectedMonth, detectedYear, columns:cols, invalidDates };
+}
+
+function renderFileList(){
+  const c = document.getElementById('fileList');
+  c.innerHTML = '';
+  state.files.forEach(f => {
+    const monthStr = (f.detectedMonth && f.detectedYear) ? `${MONTH_AR[f.detectedMonth-1]} ${f.detectedYear}` : 'غير محدد';
+    const div = document.createElement('div');
+    div.className = 'file-item';
+    div.innerHTML = `
+      <div>
+        <div class="fname">${escapeHtml(f.originalName)}</div>
+        <div class="fmeta">
+          <div>الشهر: <strong>${monthStr}</strong></div>
+          <div>الصفوف: <span class="num">${f.rowCount.toLocaleString('en-US')}</span></div>
+          ${f.invalidDates > 0 ? `<div style="color:var(--warning);">⚠️ ${f.invalidDates} صف بتاريخ غير صالح</div>` : ''}
+        </div>
+      </div>
+      <button type="button" class="fremove" data-id="${f.id}">✕ إزالة</button>
+    `;
+    div.querySelector('.fremove').addEventListener('click', () => removeFile(f.id));
+    c.appendChild(div);
+  });
+}
+
+function removeFile(id){
+  state.files = state.files.filter(f => f.id !== id);
+  renderFileList();
+  if (state.files.length === 0){
+    document.getElementById('stepAnalyze').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+  }
+}
+
+/* =========================================================================
+ANALYSIS ENGINE
+========================================================================= */
+document.getElementById('runAnalysisBtn').addEventListener('click', () => {
+  document.getElementById('analysisProgress').classList.remove('hidden');
+  document.getElementById('runAnalysisBtn').disabled = true;
+  setTimeout(() => {
+    try{
+      state.analysis = executeAnalysis(state.files);
+      document.getElementById('stepResults').classList.remove('hidden');
+      document.getElementById('stepResults').scrollIntoView({ behavior:'smooth' });
+      renderResults(state.analysis);
+      const dateStr = new Date().toISOString().slice(0,10);
+      document.getElementById('defaultFilename').value = `تقرير_مبيعات_نون_${dateStr}`;
+    } catch(err){
+      alert('خطأ في التحليل: ' + err.message);
+      console.error(err);
+    } finally {
+      document.getElementById('analysisProgress').classList.add('hidden');
+      document.getElementById('runAnalysisBtn').disabled = false;
+    }
+  }, 100);
+});
+
+function executeAnalysis(files){
+  const result = {
+    matchedReturns: [], unmatchedReturns: [],
+    fileSummaries: [], productMap: new Map(),
+    matchedOrders: [], validations: [],
+    filteredFeesCount: 0, filteredFeesValue: 0,
+    traceEntries: [],
+  };
+
+  let globalRowCounter = 0;
+
+  files.forEach(file => {
+    const cols = file.columns;
+    const priceCol = cols.priceInclVatDocCol;
+    if (!priceCol){
+      result.validations.push({ name:`ملف ${file.originalName}: عمود السعر غير موجود`, pass:false });
+      return;
+    }
+
+    const summary = {
+      fileName: file.originalName,
+      month: (file.detectedMonth && file.detectedYear) ? `${MONTH_AR[file.detectedMonth-1]} ${file.detectedYear}` : 'غير محدد',
+      totalRows: file.rowCount,
+      salesCount:0, salesValue:0,
+      returnsCount:0, returnsValue:0,
+      feesCount:0, feesValue:0,
+      otherCount:0,
+      matchedReturnsCount:0, matchedReturnsValue:0,
+      unmatchedReturnsCount:0, unmatchedReturnsValue:0,
+      finalQty:0, finalValue:0,
+      logs:[], saleRows:[], matchedReturnRows:[], unmatchedReturnRows:[]
+    };
+
+    const sales = [], returns = [], fees = [];
+    file.rows.forEach((row, idx) => {
+      const cls = classifyRow(row, cols);
+      const sku = cols.skuCol ? String(row[cols.skuCol] || '').trim() : '';
+      const desc = cols.descriptionCol ? String(row[cols.descriptionCol] || '').trim() : '';
+      const orderId = cols.sourceDocNrCol ? String(row[cols.sourceDocNrCol] || '').trim() : '';
+      const val = parseNumeric(row[priceCol]) || 0;
+      const enriched = {
+        _idx: idx, _sku: sku, _desc: desc, _orderId: orderId, _val: val,
+        _file: file.originalName, _month: summary.month, _cls: cls,
+        _globalRow: ++globalRowCounter,
+      };
+
+      // Trace entry (for Search & Inspect)
+      const traceFields = [
+        { label:'Document Type',   value: cols.documentTypeCol ? String(row[cols.documentTypeCol] || '') : '' },
+        { label:'Document Subtype',value: cols.documentSubtypeCol ? String(row[cols.documentSubtypeCol] || '') : '' },
+        { label:'Transaction Type',value: cols.transactionTypeCol ? String(row[cols.transactionTypeCol] || '') : '' },
+        { label:'Description',     value: desc },
+        { label:'SKU',             value: sku },
+        { label:'Order ID',        value: orderId },
+        { label:'Price (incl VAT)',value: String(val) },
+        { label:'File',            value: file.originalName },
+      ];
+
+      if (cls === 'sale'){
+        if (!sku){ summary.logs.push(`صف ${idx+1}: بيع بدون SKU`); }
+        else {
+          sales.push(enriched); summary.saleRows.push(enriched);
+          summary.salesCount++; summary.salesValue += val;
+        }
+        result.traceEntries.push({
+          rowIndex: enriched._globalRow,
+          searchKey: sku || orderId || `row-${enriched._globalRow}`,
+          title: desc, orderId,
+          fields: traceFields,
+          classification: 'sale',
+          included: !!sku,
+          exclusionReason: sku ? null : 'بيع بدون SKU',
+          qtyContribution: sku ? 1 : 0,
+          salesContribution: sku ? val : 0,
+        });
+      } else if (cls === 'return'){
+        if (!sku){ summary.logs.push(`صف ${idx+1}: مرتجع بدون SKU`); }
+        else { returns.push(enriched); }
+        summary.returnsCount++; summary.returnsValue += val;
+        result.traceEntries.push({
+          rowIndex: enriched._globalRow,
+          searchKey: sku || orderId || `row-${enriched._globalRow}`,
+          title: desc, orderId,
+          fields: traceFields,
+          classification: 'return',
+          included: !!sku,
+          exclusionReason: sku ? null : 'مرتجع بدون SKU',
+          qtyContribution: sku ? -1 : 0,
+          salesContribution: sku ? -val : 0,
+        });
+      } else if (cls === 'fee'){
+        fees.push(enriched);
+        summary.feesCount++; summary.feesValue += val;
+        result.filteredFeesCount++;
+        result.filteredFeesValue += val;
+        result.traceEntries.push({
+          rowIndex: enriched._globalRow,
+          searchKey: sku || orderId || `row-${enriched._globalRow}`,
+          title: desc, orderId,
+          fields: traceFields,
+          classification: 'fee',
+          included: false,
+          exclusionReason: 'رسوم (Fee) — تم استبعادها',
+          qtyContribution: 0,
+          salesContribution: 0,
+        });
+      } else {
+        summary.otherCount++;
+        result.traceEntries.push({
+          rowIndex: enriched._globalRow,
+          searchKey: sku || orderId || `row-${enriched._globalRow}`,
+          title: desc, orderId,
+          fields: traceFields,
+          classification: 'other',
+          included: false,
+          exclusionReason: 'نوع غير مصنف (Other)',
+          qtyContribution: 0,
+          salesContribution: 0,
+        });
+      }
+    });
+
+    // Match returns with sales by Order ID
+    const orderMap = new Map();
+    sales.forEach(s => {
+      const key = s._orderId || `__no_order_${s._idx}`;
+      if (!orderMap.has(key)) orderMap.set(key, { sales:[], returns:[] });
+      orderMap.get(key).sales.push(s);
+    });
+    returns.forEach(r => {
+      const key = r._orderId || `__no_order_${r._idx}`;
+      if (!orderMap.has(key)) orderMap.set(key, { sales:[], returns:[] });
+      orderMap.get(key).returns.push(r);
+    });
+
+    orderMap.forEach((data, orderId) => {
+      const hasSales = data.sales.length > 0;
+      const hasReturns = data.returns.length > 0;
+      const isRealOrder = orderId && !orderId.startsWith('__no_order_');
+
+      if (hasSales && hasReturns && isRealOrder){
+        const returnValue = data.returns.reduce((s,x) => s + x._val, 0);
+        data.returns.forEach(r => {
+          result.matchedReturns.push(r);
+          summary.matchedReturnsCount++;
+          summary.matchedReturnsValue += r._val;
+          summary.matchedReturnRows.push(r);
+        });
+        result.matchedOrders.push({
+          orderId,
+          sku: data.sales[0]._sku,
+          desc: data.sales[0]._desc,
+          month: summary.month,
+          salesValue: round2(data.sales.reduce((s,x) => s + x._val, 0)),
+          returnValue: round2(returnValue),
+        });
+      } else if (!hasSales && hasReturns){
+        data.returns.forEach(r => {
+          result.unmatchedReturns.push(r);
+          summary.unmatchedReturnsCount++;
+          summary.unmatchedReturnsValue += r._val;
+          summary.unmatchedReturnRows.push(r);
+        });
+      }
+    });
+
+    summary.finalQty = summary.salesCount - summary.matchedReturnsCount - summary.unmatchedReturnsCount;
+    summary.finalValue = round2(summary.salesValue - summary.matchedReturnsValue - summary.unmatchedReturnsValue);
+    summary.salesValue = round2(summary.salesValue);
+    summary.returnsValue = round2(summary.returnsValue);
+    summary.feesValue = round2(summary.feesValue);
+    summary.matchedReturnsValue = round2(summary.matchedReturnsValue);
+    summary.unmatchedReturnsValue = round2(summary.unmatchedReturnsValue);
+
+    // Track products from sales
+    sales.forEach(s => {
+      const key = s._sku;
+      if (!result.productMap.has(key)){
+        result.productMap.set(key, {
+          sku: s._sku, title: s._desc,
+          qty_sold: 0, value_sold: 0,
+          qty_returned_matched: 0, value_returned_matched: 0,
+          qty_returned_unmatched: 0, value_returned_unmatched: 0,
+          months: new Set(), perMonth: new Map()
+        });
+      }
+      const p = result.productMap.get(key);
+      p.qty_sold++; p.value_sold += s._val; p.months.add(summary.month);
+      if (!p.perMonth.has(summary.month)){
+        p.perMonth.set(summary.month, { qty_sold:0, value_sold:0, qty_returned:0, value_returned:0 });
+      }
+      const pm = p.perMonth.get(summary.month);
+      pm.qty_sold++; pm.value_sold += s._val;
+      if (p.title !== s._desc && !p.title.includes(s._desc)) p.title = p.title + ' | ' + s._desc;
+    });
+
+    // Track matched returns
+    summary.matchedReturnRows.forEach(r => {
+      const p = result.productMap.get(r._sku);
+      if (p){
+        p.qty_returned_matched++;
+        p.value_returned_matched += r._val;
+        p.months.add(summary.month);
+        if (!p.perMonth.has(summary.month)){
+          p.perMonth.set(summary.month, { qty_sold:0, value_sold:0, qty_returned:0, value_returned:0 });
+        }
+        const pm = p.perMonth.get(summary.month);
+        pm.qty_returned++; pm.value_returned += r._val;
+      }
+    });
+
+    // Track unmatched returns
+    summary.unmatchedReturnRows.forEach(r => {
+      const p = result.productMap.get(r._sku);
+      if (p){
+        p.qty_returned_unmatched++;
+        p.value_returned_unmatched += r._val;
+        p.months.add(summary.month);
+        if (!p.perMonth.has(summary.month)){
+          p.perMonth.set(summary.month, { qty_sold:0, value_sold:0, qty_returned:0, value_returned:0 });
+        }
+        const pm = p.perMonth.get(summary.month);
+        pm.qty_returned++; pm.value_returned += r._val;
+      }
+    });
+
+    result.fileSummaries.push(summary);
+  });
+
+  // Compute NET per product
+  result.productMap.forEach(p => {
+    p.qty_net = p.qty_sold - p.qty_returned_matched - p.qty_returned_unmatched;
+    p.value_net = round2(p.value_sold - p.value_returned_matched - p.value_returned_unmatched);
+    p.has_negative_net = p.qty_net < 0 || p.value_net < 0;
+    p.perMonth.forEach(pm => {
+      pm.qty_net = pm.qty_sold - pm.qty_returned;
+      pm.value_net = round2(pm.value_sold - pm.value_returned);
+    });
+  });
+
+  // Global totals
+  let gSales=0, gReturns=0, gFees=0, gMatchedRet=0, gUnmatchRet=0, gFinal=0, gFinalQty=0;
+  result.fileSummaries.forEach(f => {
+    gSales += f.salesValue; gReturns += f.returnsValue; gFees += f.feesValue;
+    gMatchedRet += f.matchedReturnsValue; gUnmatchRet += f.unmatchedReturnsValue;
+    gFinal += f.finalValue; gFinalQty += f.finalQty;
+  });
+  result.global = {
+    totalFiles: files.length,
+    totalSales: round2(gSales), totalReturns: round2(gReturns), totalFees: round2(gFees),
+    matchedReturnsValue: round2(gMatchedRet), unmatchedReturnsValue: round2(gUnmatchRet),
+    finalValue: round2(gFinal), finalQty: gFinalQty,
+    uniqueProducts: result.productMap.size,
+    matchedReturnsCount: result.matchedReturns.length,
+    unmatchedReturnsCount: result.unmatchedReturns.length,
+    filteredFeesCount: result.filteredFeesCount,
+    filteredFeesValue: round2(result.filteredFeesValue),
+  };
+
+  const sumProductsQty = Array.from(result.productMap.values()).reduce((s,p) => s + p.qty_net, 0);
+  const sumProductsValue = round2(Array.from(result.productMap.values()).reduce((s,p) => s + p.value_net, 0));
+
+  result.validations = [
+    { name:'المعادلة: المبيعات − المرتجعات المطابقة − المرتجعات غير المطابقة = الصافي',
+      pass: Math.abs(result.global.totalSales - result.global.matchedReturnsValue - result.global.unmatchedReturnsValue - result.global.finalValue) < 0.05 },
+    { name:'لا توجد رسوم محسوبة ضمن مبيعات المنتجات',
+      pass: result.global.totalFees >= 0 && result.fileSummaries.every(f => f.feesValue >= 0) },
+    { name:'المرتجعات المطابقة ≤ قيمة البيع للطلب',
+      pass: result.matchedOrders.length === 0 || result.matchedOrders.every(o => o.returnValue <= o.salesValue + 0.01) },
+    { name:'عدد المرتجعات غير المطابقة متسق',
+      pass: result.unmatchedReturns.length === result.global.unmatchedReturnsCount },
+    { name:'عدد المنتجات الفريدة > 0', pass: result.global.uniqueProducts > 0 },
+    { name:'إجمالي المبيعات > 0', pass: result.global.totalSales > 0 },
+    { name:'الكمية الصافية المباعة > 0', pass: result.global.finalQty > 0 },
+    { name:'لا توجد ملفات بدون بيانات مبيعات أو مرتجعات',
+      pass: result.fileSummaries.every(f => f.salesCount > 0 || f.returnsCount > 0) },
+    { name:'مجموع الكميات الصافية للمنتجات = الكمية الصافية الإجمالية',
+      pass: Math.abs(sumProductsQty - result.global.finalQty) < 0.01 },
+    { name:'مجموع القيم الصافية للمنتجات = القيمة الصافية الإجمالية',
+      pass: Math.abs(sumProductsValue - result.global.finalValue) < 0.05 }
+  ];
+
+  // Attach trace for Search & Inspect
+  result.trace = {
+    platformLabel: 'Noon (Settlement)',
+    steps: ['تصنيف الصف (sale / return / fee / other)', 'SKU غير فارغ', 'مطابقة المرتجع مع بيع بنفس Order ID'],
+    entries: result.traceEntries,
+  };
+
+  return result;
+}
+
+/* =========================================================================
+RENDER RESULTS
+========================================================================= */
+function renderResults(a){
+  const g = a.global;
+  const allPass = a.validations.every(v => v.pass);
+  const stampCls = allPass ? '' : 'failed';
+  const stampTxt = allPass ? 'إجمالي<br>مطابق' : 'يحتاج<br>مراجعة';
+
+  const sortedSummaries = sortByMonth(a.fileSummaries);
+
+  // Monthly table
+  let monthlyHtml = `
+    <div class="summary-card">
+      <div class="stamp ${stampCls}">${stampTxt}</div>
+      <div class="label">الملخص الشهري — الكمية والقيمة الصافيتين بعد خصم المرتجعات</div>
+    </div>
+    <div class="table-scroll">
+      <table class="monthly-table">
+        <thead>
+          <tr>
+            <th>الشهر</th>
+            <th>الملف</th>
+            <th>المبيعات الأصلية</th>
+            <th>المرتجعات المطابقة</th>
+            <th>المرتجعات غير المطابقة</th>
+            <th>الصافي النهائي (القيمة)</th>
+            <th>الصافي النهائي (الكمية)</th>
+            <th>المنتجات</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  sortedSummaries.forEach(f => {
+    const productCount = Array.from(a.productMap.values()).filter(p => p.months.has(f.month)).length;
+    monthlyHtml += `
+      <tr>
+        <td><strong>${f.month}</strong></td>
+        <td>${escapeHtml(f.fileName)}</td>
+        <td class="num col-num">${fmtNum(f.salesValue)}</td>
+        <td class="num col-num" style="color:var(--warning);">${fmtNum(f.matchedReturnsValue)}</td>
+        <td class="num col-num" style="color:var(--warning);">${fmtNum(f.unmatchedReturnsValue)}</td>
+        <td class="num col-num" style="color:var(--positive); font-weight:700;">${fmtNum(f.finalValue)}</td>
+        <td class="num col-num" style="color:var(--positive); font-weight:700;">${f.finalQty.toLocaleString('en-US')}</td>
+        <td class="num col-num">${productCount.toLocaleString('en-US')}</td>
+      </tr>
+    `;
+  });
+  monthlyHtml += `
+      <tr class="total-row">
+        <td colspan="2"><strong>الإجمالي الكلي</strong></td>
+        <td class="num col-num"><strong>${fmtNum(g.totalSales)}</strong></td>
+        <td class="num col-num" style="color:var(--warning);"><strong>${fmtNum(g.matchedReturnsValue)}</strong></td>
+        <td class="num col-num" style="color:var(--warning);"><strong>${fmtNum(g.unmatchedReturnsValue)}</strong></td>
+        <td class="num col-num" style="color:var(--positive);"><strong>${fmtNum(g.finalValue)}</strong></td>
+        <td class="num col-num"><strong>${g.finalQty.toLocaleString('en-US')}</strong></td>
+        <td class="num col-num"><strong>${a.productMap.size.toLocaleString('en-US')}</strong></td>
+      </tr>
+    </tbody></table></div>
+  `;
+  document.getElementById('monthlyTable').innerHTML = monthlyHtml;
+
+  // Formula box
+  document.getElementById('formulaBox').innerHTML = `
+    <div class="formula-box">
+      <div class="formula"><strong>المعادلة:</strong></div>
+      <div class="formula" style="margin-top:8px;">المبيعات الأصلية − المرتجعات المطابقة − المرتجعات غير المطابقة = الصافي النهائي</div>
+      <div class="formula" style="margin-top:8px;">${fmtNum(g.totalSales)} − ${fmtNum(g.matchedReturnsValue)} − ${fmtNum(g.unmatchedReturnsValue)} = <span class="result">${fmtNum(g.finalValue)}</span></div>
+      <div class="formula" style="margin-top:8px;">الكمية الصافية = ${g.finalQty.toLocaleString('en-US')} قطعة</div>
+      <div class="formula" style="margin-top:8px; color:var(--warning);">⚠️ تم استبعاد ${g.filteredFeesCount.toLocaleString('en-US')} صف رسوم (FBN, Storage, Subsidy, RTV) بقيمة ${fmtNum(g.filteredFeesValue)}</div>
+    </div>
+  `;
+
+  renderProductsTable(a);
+  renderValidations(a);
+}
+
+function renderProductsTable(a){
+  let arr = Array.from(a.productMap.values());
+  arr.sort((a,b) => b.qty_net - a.qty_net);
+  const tbody = document.getElementById('productsTableBody');
+  const show = arr.slice(0, 500);
+  tbody.innerHTML = show.map(p => `
+    <tr style="${p.has_negative_net ? 'background:#FFF3CD;' : ''}">
+      <td class="num">${escapeHtml(p.sku)}</td>
+      <td>${escapeHtml(p.title)}</td>
+      <td>${Array.from(p.months).join(', ')}</td>
+      <td class="num col-num" style="color:${p.qty_net < 0 ? 'var(--danger)' : 'var(--positive)'}; font-weight:700;">${p.qty_net.toLocaleString('en-US')}</td>
+      <td class="num col-num" style="color:${p.value_net < 0 ? 'var(--danger)' : 'var(--positive)'}; font-weight:700;">${fmtNum(p.value_net)}</td>
+    </tr>
+  `).join('');
+  if (arr.length > 500){
+    tbody.innerHTML += `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">... ${arr.length-500} صف آخر (يظهر كاملاً في Excel)</td></tr>`;
+  }
+}
+
+function renderValidations(a){
+  document.getElementById('validationList').innerHTML = `
+    <div class="validation-list">
+      ${a.validations.map(v => `
+        <div class="validation-item">
+          <span class="validation-icon">${v.pass ? '✅' : '❌'}</span>
+          <span>${escapeHtml(v.name)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* =========================================================================
+TABS
+========================================================================= */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* =========================================================================
+DOWNLOAD MODAL
+========================================================================= */
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if (!state.analysis){ alert('يجب إجراء التحليل أولاً'); return; }
+  const defaultName = document.getElementById('defaultFilename').value || `تقرير_مبيعات_نون_${new Date().toISOString().slice(0,10)}`;
+  document.getElementById('modalFilename').value = defaultName;
+  document.getElementById('filenameModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('modalFilename').focus(), 100);
+});
+
+document.getElementById('closeModalBtn').addEventListener('click', () => {
+  document.getElementById('filenameModal').classList.add('hidden');
+});
+
+document.getElementById('confirmDownloadBtn').addEventListener('click', () => {
+  const filename = document.getElementById('modalFilename').value.trim() || 'تقرير_نون';
+  document.getElementById('filenameModal').classList.add('hidden');
+  exportUnifiedReport(filename);
+});
+
+document.getElementById('filenameModal').addEventListener('click', (e) => {
+  if (e.target.id === 'filenameModal') document.getElementById('filenameModal').classList.add('hidden');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !document.getElementById('filenameModal').classList.contains('hidden')){
+    document.getElementById('filenameModal').classList.add('hidden');
+  }
+});
+
+/* =========================================================================
+EXCEL EXPORT
+========================================================================= */
+function exportUnifiedReport(filename){
+  const a = state.analysis;
+  const wb = XLSX.utils.book_new();
+  const usedNames = new Set();
+  const sortedSummaries = sortByMonth(a.fileSummaries);
+  const g = a.global;
+
+  // Sheet 1: الإجماليات
+  const totalsData = [
+    ['إجماليات التقرير'],
+    [],
+    ['البند','القيمة'],
+    ['إجمالي صافي الكمية المباعة', g.finalQty],
+    ['إجمالي صافي قيمة المبيعات', g.finalValue],
+    ['عدد الأصناف المختلفة', a.productMap.size],
+    ['عدد الملفات المحللة', g.totalFiles],
+    ['عدد صفوف الرسوم المستبعدة', g.filteredFeesCount],
+    ['قيمة الرسوم المستبعدة', g.filteredFeesValue],
+    [],
+    ['تفاصيل الأصناف'],
+    ['SKU','اسم الصنف','صافي الكمية','صافي قيمة المبيعات']
+  ];
+  Array.from(a.productMap.values()).sort((a,b) => b.qty_net - a.qty_net).forEach(p => {
+    totalsData.push([p.sku, p.title, p.qty_net, round2(p.value_net)]);
+  });
+  const wsTotals = XLSX.utils.aoa_to_sheet(totalsData);
+  wsTotals['!cols'] = [{wch:25},{wch:60},{wch:18},{wch:22}];
+  wsTotals['!autofilter'] = { ref: XLSX.utils.encode_range({ s:{r:11,c:0}, e:{r:totalsData.length-1, c:3} }) };
+  wsTotals['!freeze'] = { xSplit:0, ySplit:12 };
+  XLSX.utils.book_append_sheet(wb, wsTotals, 'الإجماليات');
+
+  // Sheets per month
+  sortedSummaries.forEach(f => {
+    const sheetName = makeSafeSheetName(f.month, usedNames);
+    const monthData = [
+      [`ملخص ${f.month}`],
+      [],
+      ['البند','القيمة'],
+      ['صافي الكمية المباعة', f.finalQty],
+      ['صافي قيمة المبيعات', f.finalValue],
+      ['عدد الأصناف', Array.from(a.productMap.values()).filter(p => p.perMonth.has(f.month) && p.perMonth.get(f.month).qty_net > 0).length],
+      [],
+      ['تفاصيل الأصناف'],
+      ['SKU','اسم الصنف','صافي الكمية','صافي قيمة المبيعات']
+    ];
+    const skuMap = new Map();
+    f.saleRows.forEach(s => {
+      if (!skuMap.has(s._sku)) skuMap.set(s._sku, { sku:s._sku, desc:s._desc, qty:0, value:0 });
+      const item = skuMap.get(s._sku);
+      item.qty++; item.value += s._val;
+    });
+    f.matchedReturnRows.forEach(r => {
+      if (skuMap.has(r._sku)){
+        const item = skuMap.get(r._sku);
+        item.qty--; item.value -= r._val;
+      }
+    });
+    f.unmatchedReturnRows.forEach(r => {
+      if (skuMap.has(r._sku)){
+        const item = skuMap.get(r._sku);
+        item.qty--; item.value -= r._val;
+      }
+    });
+    const sortedSkus = Array.from(skuMap.values()).sort((a,b) => b.qty - a.qty);
+    sortedSkus.forEach(item => {
+      monthData.push([item.sku, item.desc, item.qty, round2(item.value)]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(monthData);
+    ws['!cols'] = [{wch:25},{wch:60},{wch:18},{wch:22}];
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s:{r:8,c:0}, e:{r:monthData.length-1, c:3} }) };
+    ws['!freeze'] = { xSplit:0, ySplit:9 };
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  XLSX.writeFile(wb, `${filename}.xlsx`);
+}
+
+/* =========================================================================
+SEARCH & INSPECT
+========================================================================= */
+const inspectSearchInput = document.getElementById('inspectSearchInput');
+const inspectMatchesEl = document.getElementById('inspectMatches');
+const inspectPanelEl = document.getElementById('inspectPanel');
+
+inspectSearchInput.addEventListener('input', () => {
+  const q = inspectSearchInput.value.trim().toLowerCase();
+  inspectPanelEl.innerHTML = '';
+  if (!state.analysis || !state.analysis.trace || q.length < 2){
+    inspectMatchesEl.innerHTML = '';
+    return;
+  }
+
+  const byKey = new Map();
+  for (const entry of state.analysis.trace.entries){
+    const hay = (entry.searchKey + ' ' + entry.title + ' ' + entry.orderId).toLowerCase();
+    if (!hay.includes(q)) continue;
+    if (!entry.searchKey) continue;
+    if (!byKey.has(entry.searchKey)){
+      byKey.set(entry.searchKey, { key:entry.searchKey, title:entry.title, count:0 });
+    }
+    const g = byKey.get(entry.searchKey);
+    g.count++;
+    if (!g.title && entry.title) g.title = entry.title;
+  }
+
+  const matches = Array.from(byKey.values()).slice(0, 30);
+  if (matches.length === 0){
+    inspectMatchesEl.innerHTML = `<div class="inspect-empty">لا توجد نتائج مطابقة.</div>`;
+    return;
+  }
+
+  inspectMatchesEl.innerHTML = `<div class="inspect-matches">${matches.map(m => `
+    <div class="inspect-match" data-key="${escapeHtml(m.key)}">
+      <div>
+        <div class="im-key">${escapeHtml(m.key)}</div>
+        ${m.title ? `<div class="im-title">${escapeHtml(m.title)}</div>` : ''}
+      </div>
+      <div class="im-count">${m.count.toLocaleString('en-US')} صف</div>
+    </div>
+  `).join('')}</div>`;
+
+  inspectMatchesEl.querySelectorAll('.inspect-match').forEach(el => {
+    el.addEventListener('click', () => openInspectPanel(el.dataset.key));
+  });
+});
+
+function openInspectPanel(searchKey){
+  if (!state.analysis || !state.analysis.trace) return;
+  const rows = state.analysis.trace.entries.filter(e => e.searchKey === searchKey);
+  if (rows.length === 0) return;
+
+  const steps = state.analysis.trace.steps;
+  const title = rows.find(r => r.title)?.title || '';
+  const rowsFound = rows.length;
+
+  // Build cascading counts based on classification
+  const saleRows = rows.filter(r => r.classification === 'sale');
+  const returnRows = rows.filter(r => r.classification === 'return');
+  const feeRows = rows.filter(r => r.classification === 'fee');
+  const otherRows = rows.filter(r => r.classification === 'other');
+
+  const finalQty = rows.reduce((s,r) => s + (r.qtyContribution || 0), 0);
+  const totalSales = rows.reduce((s,r) => s + (r.salesContribution || 0), 0);
+
+  const fieldLabels = [];
+  rows.forEach(r => r.fields.forEach(f => { if (!fieldLabels.includes(f.label)) fieldLabels.push(f.label); }));
+
+  const stepsHtml = [
+    `<div class="is-row"><span class="is-label">Rows Found</span><span>${rowsFound.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row"><span class="is-label">Sales</span><span>${saleRows.length.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row"><span class="is-label">Returns</span><span>${returnRows.length.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row"><span class="is-label">Fees (excluded)</span><span>${feeRows.length.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row"><span class="is-label">Other (excluded)</span><span>${otherRows.length.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row final"><span class="is-label">Net Quantity</span><span>${finalQty.toLocaleString('en-US')}</span></div>`,
+    `<div class="is-row final"><span class="is-label">Net Value</span><span>${fmtNum(totalSales)}</span></div>`,
+  ].join('');
+
+  const rowsTableHtml = `
+    <table class="inspect-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          ${fieldLabels.map(l => `<th>${escapeHtml(l)}</th>`).join('')}
+          <th>Type</th>
+          <th>Included</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => {
+          const cellsByLabel = {};
+          r.fields.forEach(f => { cellsByLabel[f.label] = f.value; });
+          const cells = fieldLabels.map(l => `<td>${escapeHtml(cellsByLabel[l] ?? '')}</td>`).join('');
+          const badge = r.included
+            ? `<span class="included-badge yes">✅ Included</span>`
+            : `<span class="included-badge no">❌ Excluded</span>`;
+          const typeBadge = {
+            sale: `<span style="color:var(--positive); font-weight:700;">Sale</span>`,
+            return: `<span style="color:var(--warning); font-weight:700;">Return</span>`,
+            fee: `<span style="color:var(--danger); font-weight:700;">Fee</span>`,
+            other: `<span style="color:var(--text-muted);">Other</span>`,
+          }[r.classification] || r.classification;
+          const reason = r.exclusionReason ? `<span class="exclusion-reason">${escapeHtml(r.exclusionReason)}</span>` : '—';
+          return `<tr class="${r.included ? '' : 'excluded'}"><td class="num">${r.rowIndex}</td>${cells}<td>${typeBadge}</td><td>${badge}</td><td>${reason}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  inspectPanelEl.innerHTML = `
+    <div class="inspect-panel">
+      <div class="inspect-panel-head">
+        <div>
+          <h3>Inspect — ${escapeHtml(searchKey)}</h3>
+          <div class="ip-sub">${title ? escapeHtml(title) + ' — ' : ''}${escapeHtml(state.analysis.trace.platformLabel)}</div>
+        </div>
+        <button type="button" class="inspect-copy-btn" id="inspectCopyBtn">⧉ Copy Debug Data</button>
+      </div>
+      <div class="inspect-panel-body">
+        <div class="inspect-steps">${stepsHtml}</div>
+        <details class="inspect-rows-toggle" open>
+          <summary>عرض كل الصفوف (${rowsFound.toLocaleString('en-US')})</summary>
+          <div class="inspect-table-scroll">${rowsTableHtml}</div>
+        </details>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('inspectCopyBtn').addEventListener('click', (e) => {
+    const payload = {
+      searchKey, title, marketplace: state.analysis.trace.platformLabel,
+      rowsFound,
+      classificationBreakdown: {
+        sales: saleRows.length,
+        returns: returnRows.length,
+        fees: feeRows.length,
+        other: otherRows.length,
+      },
+      finalQuantity: finalQty,
+      netValue: round2(totalSales),
+      rows: rows.map(r => ({
+        row: r.rowIndex,
+        ...Object.fromEntries(r.fields.map(f => [f.label, f.value])),
+        classification: r.classification,
+        included: r.included,
+        reason: r.exclusionReason || '',
+      })),
+    };
+    navigator.clipboard.writeText(JSON.stringify(payload, null, 2)).then(() => {
+      const btn = e.currentTarget;
+      const original = btn.textContent;
+      btn.textContent = '✓ تم النسخ';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+    });
+  });
+
+  inspectPanelEl.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+</script>
+</body>
+</html>
