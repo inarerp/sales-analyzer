@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دفتر — محلل مبيعات المنصات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16302A; --ink-soft:#24443A;
+  --paper:#F8F6F0; --paper-alt:#EFEAdd; --paper-card:#FFFFFF;
+  --line:#D9D2BE; --line-soft:#E7E2D2;
+  --accent:#C77D2E; --accent-soft:#E9BD84;
+  --positive:#2F6B4F; --danger:#A6402F; --warning:#B8860B;
+  --text:#1C241F; --text-muted:#64705F;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(22,48,42,0.06), 0 8px 24px -12px rgba(22,48,42,0.18);
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--paper);
+  background-image:linear-gradient(var(--line-soft) 1px, transparent 1px);
+  background-size:100% 42px;
+  color:var(--text);
+  font-family:'Tajawal', sans-serif;
+  min-height:100vh;
+  line-height:1.55;
+}
+.wrap{ max-width:1100px; margin:0 auto; padding:28px 20px 80px; }
+.num{
+  font-family:'IBM Plex Mono', monospace;
+  font-variant-numeric:tabular-nums;
+  direction:ltr; unicode-bidi:isolate;
+}
+
+/* ---------- Header ---------- */
+header.top{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:10px 0 26px;
+  border-bottom:2px solid var(--ink);
+  margin-bottom:30px;
+  flex-wrap:wrap;
+}
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand-mark{
+  width:46px; height:46px; border-radius:50%;
+  border:2px solid var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600; color:var(--ink); font-size:18px; flex-shrink:0;
+}
+.brand h1{ font-size:24px; margin:0; font-weight:800; color:var(--ink); letter-spacing:.2px; }
+.brand p{ margin:2px 0 0; font-size:12.5px; color:var(--text-muted); }
+.badge-ledger{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px; color:var(--text-muted);
+  border:1px dashed var(--line);
+  padding:5px 10px; border-radius:20px; white-space:nowrap;
+}
+
+/* ---------- Hero ---------- */
+.hero{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:28px;
+  margin-bottom:26px;
+  text-align:center;
+}
+.hero h2{
+  font-size:20px; margin:0 0 8px;
+  color:var(--ink); font-weight:800;
+}
+.hero p{
+  font-size:14px; color:var(--text-muted);
+  margin:0; line-height:1.7;
+}
+
+/* ---------- Total card ---------- */
+.total-card{
+  background:linear-gradient(135deg, var(--ink) 0%, var(--ink-soft) 100%);
+  color:#fff;
+  border-radius:var(--radius);
+  padding:24px;
+  margin-bottom:26px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  flex-wrap:wrap;
+  box-shadow:var(--shadow);
+}
+.total-card .tc-label{
+  font-size:13px; opacity:.85;
+  font-weight:600; margin-bottom:6px;
+}
+.total-card .tc-value{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:32px; font-weight:700;
+  letter-spacing:.5px;
+}
+.total-card .tc-sub{
+  font-size:12px; opacity:.75;
+  margin-top:4px;
+}
+.total-card .tc-stamp{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10px; font-weight:600;
+  border:1.5px dashed rgba(255,255,255,0.4);
+  padding:6px 12px; border-radius:20px;
+  white-space:nowrap;
+}
+
+/* ---------- Platform cards ---------- */
+.platforms-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:18px;
+  margin-bottom:26px;
+}
+.platform-card{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px;
+  cursor:pointer;
+  transition:transform .15s, box-shadow .15s, border-color .15s;
+  position:relative;
+  overflow:hidden;
+  text-decoration:none;
+  color:inherit;
+  display:flex;
+  flex-direction:column;
+  min-height:220px;
+}
+.platform-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 24px -8px rgba(22,48,42,0.25);
+  border-color:var(--accent-soft);
+}
+.platform-card:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+.pc-head{
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:16px;
+}
+.pc-mark{
+  width:48px; height:48px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:700; font-size:20px;
+  flex-shrink:0;
+}
+.pc-mark.noon{ background:#FDD835; color:#1a1a1a; }
+.pc-mark.amazon{ background:#FF9900; color:#1a1a1a; }
+.pc-mark.trendyol{ background:#F27A1A; color:#fff; }
+.pc-title{
+  font-size:18px; font-weight:800;
+  color:var(--ink); margin:0;
+}
+.pc-subtitle{
+  font-size:11.5px; color:var(--text-muted);
+  margin:2px 0 0;
+}
+.pc-body{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.pc-stat{
+  display:flex; justify-content:space-between;
+  align-items:baseline;
+  padding:8px 0;
+  border-top:1px dashed var(--line-soft);
+}
+.pc-stat:first-child{ border-top:none; padding-top:0; }
+.pc-stat .label{
+  font-size:12px; color:var(--text-muted);
+  font-weight:600;
+}
+.pc-stat .value{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:14px; font-weight:600;
+  color:var(--ink);
+}
+.pc-empty{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-muted);
+  font-size:13px;
+  font-style:italic;
+  padding:20px 0;
+}
+.pc-footer{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--line-soft);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+}
+.pc-footer .last-run{
+  color:var(--text-muted);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+}
+.pc-footer .go-btn{
+  background:var(--ink);
+  color:#fff;
+  padding:6px 14px;
+  border-radius:6px;
+  font-weight:700;
+  font-size:12px;
+  transition:background .15s;
+}
+.platform-card:hover .go-btn{ background:var(--accent); }
+
+/* ---------- Features ---------- */
+.features{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:24px;
+  margin-bottom:26px;
+  box-shadow:var(--shadow);
+}
+.features h3{
+  font-size:16px; margin:0 0 16px;
+  color:var(--ink); font-weight:800;
+}
+.features-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:16px;
+}
+.feature-item{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+}
+.feature-icon{
+  width:36px; height:36px;
+  background:var(--paper);
+  border:1px solid var(--line-soft);
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  flex-shrink:0;
+}
+.feature-text h4{
+  font-size:13.5px; margin:0 0 3px;
+  color:var(--ink); font-weight:700;
+}
+.feature-text p{
+  font-size:12px; margin:0;
+  color:var(--text-muted); line-height:1.6;
+}
+
+/* ---------- Footer ---------- */
+footer.foot{
+  text-align:center;
+  color:var(--text-muted);
+  font-size:12px;
+  margin-top:34px;
+  padding-top:20px;
+  border-top:1px dashed var(--line);
+}
+footer.foot a{
+  color:var(--accent);
+  text-decoration:none;
+  font-weight:600;
+}
+footer.foot a:hover{ text-decoration:underline; }
+
+@media (max-width:640px){
+  .brand h1{ font-size:20px; }
+  .total-card .tc-value{ font-size:24px; }
+  .platform-card{ padding:18px; min-height:200px; }
+  .pc-mark{ width:42px; height:42px; font-size:18px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark">دم</div>
+    <div>
+      <h1>دفتر المبيعات</h1>
+      <p>محلل مبيعات المنصات — Noon · Amazon · Trendyol</p>
+    </div>
+  </div>
+  <div class="badge-ledger">لا تخزين • لا حسابات • خصوصية كاملة</div>
+</header>
+
+<section class="hero">
+  <h2>مرحبًا بك 👋</h2>
+  <p>اختر المنصة لبدء تحليل ملفات المبيعات. كل المعالجة تتم محليًا داخل متصفحك — لا يتم رفع أي بيانات إلى أي خادم.</p>
+</section>
+
+<section class="total-card" id="totalCard" style="display:none;">
+  <div>
+    <div class="tc-label">إجمالي المبيعات عبر كل المنصات</div>
+    <div class="tc-value num" id="totalValue">—</div>
+    <div class="tc-sub" id="totalSub"></div>
+  </div>
+  <div class="tc-stamp">محدّث محليًا</div>
+</section>
+
+<section class="platforms-grid" id="platformsGrid">
+  <a href="noon.html" class="platform-card" data-platform="noon">
+    <div class="pc-head">
+      <div class="pc-mark noon">ن</div>
+      <div>
+        <h3 class="pc-title">Noon</h3>
+        <p class="pc-subtitle">محلل تسويات نون — تقارير شهرية</p>
+      </div>
+    </div>
+    <div class="pc-body" id="noonBody">
+      <div class="pc-empty">لم يتم إجراء تحليل بعد</div>
+    </div>
+    <div class="pc-footer">
+      <span class="last-run" id="noonLastRun">—</span>
+      <span class="go-btn">ابدأ التحليل ←</span>
+    </div>
+  </a>
+
+  <a href="amazon.html" class="platform-card" data-platform="amazon">
+    <div class="pc-head">
+      <div class="pc-mark amazon">أ</div>
+      <div>
+        <h3 class="pc-title">Amazon</h3>
+        <p class="pc-subtitle">محلل مبيعات أمازون — Custom Transaction</p>
+      </div>
+    </div>
+    <div class="pc-body" id="amazonBody">
+      <div class="pc-empty">لم يتم إجراء تحليل بعد</div>
+    </div>
+    <div class="pc-footer">
+      <span class="last-run" id="amazonLastRun">—</span>
+      <span class="go-btn">ابدأ التحليل ←</span>
+    </div>
+  </a>
+
+  <a href="trendyol.html" class="platform-card" data-platform="trendyol">
+    <div class="pc-head">
+      <div class="pc-mark trendyol">ت</div>
+      <div>
+        <h3 class="pc-title">Trendyol</h3>
+        <p class="pc-subtitle">محلل مبيعات ترينديول — Sales by Product</p>
+      </div>
+    </div>
+    <div class="pc-body" id="trendyolBody">
+      <div class="pc-empty">لم يتم إجراء تحليل بعد</div>
+    </div>
+    <div class="pc-footer">
+      <span class="last-run" id="trendyolLastRun">—</span>
+      <span class="go-btn">ابدأ التحليل ←</span>
+    </div>
+  </a>
+</section>
+
+<section class="features">
+  <h3>✨ مميزات الأداة</h3>
+  <div class="features-grid">
+    <div class="feature-item">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-text">
+        <h4>خصوصية كاملة</h4>
+        <p>كل المعالجة تتم داخل متصفحك — لا يتم رفع أي بيانات إلى أي خادم.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-text">
+        <h4>Search &amp; Inspect</h4>
+        <p>أداة تحقق تفصيلية لكل صف — تعرف بالتفصيل كيف وصلت الأداة للنتيجة.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">📊</div>
+      <div class="feature-text">
+        <h4>تقارير Excel</h4>
+        <p>تصدير النتائج في ملف Excel منظم مع ملخص وشيتات شهرية.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-text">
+        <h4>سريع وبدون تثبيت</h4>
+        <p>يعمل مباشرة من المتصفح — لا يحتاج تثبيت أو إعداد.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🧮</div>
+      <div class="feature-text">
+        <h4>اختبارات صحة</h4>
+        <p>تحقق تلقائي من صحة المعادلات والأرقام قبل عرض النتائج.</p>
+      </div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🌍</div>
+      <div class="feature-text">
+        <h4>دعم التوقيت المحلي</h4>
+        <p>تحويل تلقائي للتوقيت (UTC+3 لأمازون السعودية).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  صُنع بـ ❤️ — <a href="https://github.com" target="_blank" rel="noopener">sales-analyzer</a>
+</footer>
+
+</div>
+
+<script>
+/* =========================================================================
+LAST-ANALYSIS STORAGE (per-platform)
+Each platform page writes a small summary to localStorage after a
+successful analysis. This dashboard reads it to show the "last run" info.
+========================================================================= */
+const STORAGE_KEY = 'salesAnalyzer_lastRuns';
+
+function loadLastRuns(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(err){
+    return {};
+  }
+}
+
+function formatCurrency(value){
+  if (value === null || value === undefined || isNaN(value)) return '—';
+  return Number(value).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function formatRelativeTime(ts){
+  if (!ts) return '—';
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'الآن';
+  if (mins < 60) return `منذ ${mins} دقيقة`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `منذ ${hours} ساعة`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `منذ ${days} يوم`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `منذ ${months} شهر`;
+  const years = Math.floor(months / 12);
+  return `منذ ${years} سنة`;
+}
+
+/* =========================================================================
+PLATFORM CONFIG
+========================================================================= */
+const PLATFORMS = {
+  noon: {
+    label: 'Noon',
+    valueLabel: 'صافي المبيعات',
+    qtyLabel: 'صافي الكمية',
+    valueKey: 'finalValue',
+    qtyKey: 'finalQty',
+    productsKey: 'uniqueProducts',
+  },
+  amazon: {
+    label: 'Amazon',
+    valueLabel: 'إجمالي المبيعات',
+    qtyLabel: 'الكمية المباعة',
+    valueKey: 'totalSales',
+    qtyKey: 'totalQty',
+    productsKey: 'totalProducts',
+  },
+  trendyol: {
+    label: 'Trendyol',
+    valueLabel: 'Business Sales',
+    qtyLabel: 'الكمية المباعة',
+    valueKey: 'totalSales',
+    qtyKey: 'totalQty',
+    productsKey: 'totalProducts',
+  },
+};
+
+/* =========================================================================
+RENDER
+========================================================================= */
+function renderDashboard(){
+  const lastRuns = loadLastRuns();
+  let grandTotal = 0;
+  let platformsWithRuns = 0;
+
+  Object.keys(PLATFORMS).forEach(platformId => {
+    const cfg = PLATFORMS[platformId];
+    const data = lastRuns[platformId];
+    const bodyEl = document.getElementById(`${platformId}Body`);
+    const lastRunEl = document.getElementById(`${platformId}LastRun`);
+
+    if (!data){
+      bodyEl.innerHTML = `<div class="pc-empty">لم يتم إجراء تحليل بعد</div>`;
+      lastRunEl.textContent = '—';
+      return;
+    }
+
+    platformsWithRuns++;
+    const value = data[cfg.valueKey] || 0;
+    const qty = data[cfg.qtyKey] || 0;
+    const products = data[cfg.productsKey] || 0;
+    grandTotal += value;
+
+    bodyEl.innerHTML = `
+      <div class="pc-stat">
+        <span class="label">${cfg.valueLabel}</span>
+        <span class="value num">${formatCurrency(value)}</span>
+      </div>
+      <div class="pc-stat">
+        <span class="label">${cfg.qtyLabel}</span>
+        <span class="value num">${Number(qty).toLocaleString('en-US')}</span>
+      </div>
+      <div class="pc-stat">
+        <span class="label">عدد المنتجات</span>
+        <span class="value num">${Number(products).toLocaleString('en-US')}</span>
+      </div>
+    `;
+
+    lastRunEl.textContent = data.timestamp
+      ? formatRelativeTime(data.timestamp)
+      : '—';
+  });
+
+  // Grand total card
+  const totalCard = document.getElementById('totalCard');
+  if (platformsWithRuns > 0){
+    totalCard.style.display = 'flex';
+    document.getElementById('totalValue').textContent = formatCurrency(grandTotal);
+    const subText = platformsWithRuns === 1
+      ? `من منصة واحدة`
+      : `من ${platformsWithRuns} منصات`;
+    document.getElementById('totalSub').textContent = subText;
+  } else {
+    totalCard.style.display = 'none';
+  }
+}
+
+/* =========================================================================
+INIT
+========================================================================= */
+renderDashboard();
+
+// Re-render every minute so relative times stay fresh
+setInterval(renderDashboard, 60000);
+
+// Listen for storage changes from other tabs (if user analyzes in another tab)
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEY) renderDashboard();
+});
+</script>
+</body>
+</html>
