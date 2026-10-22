@@ -482,7 +482,7 @@ footer.foot{
 /* =========================================================================
 STATE
 ========================================================================= */
-const state = { files: [], analysis: null, trace: null };
+const state = { files: [], analysis: null };
 let fileIdCounter = 0;
 
 const MONTH_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -501,6 +501,8 @@ function parseNumeric(v){
   return isNaN(n) ? null : n;
 }
 
+// ✅ إصلاح C3: parseDate يفترض دائماً MM/DD/YYYY (التنسيق الأمريكي)
+// لأن نون يستخدم هذا التنسيق في معظم التصديرات
 function parseDate(v){
   if (!v) return null;
   if (v instanceof Date && !isNaN(v)) return v;
@@ -510,24 +512,26 @@ function parseDate(v){
   }
   if (typeof v === 'string'){
     const s = v.trim();
+    // YYYY-MM-DD (الأكثر أماناً — بدون تخمين)
     let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
     if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+    // MM/DD/YYYY — افترض دائماً أن الأول هو الشهر
     m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
     if (m){
-      let p1=+m[1], p2=+m[2], p3=+m[3];
-      if (p3 < 100) p3 += 2000;
-      if (p1 > 12) return new Date(p3, p2-1, p1);
-      return new Date(p3, p1-1, p2);
+      let month=+m[1], day=+m[2], year=+m[3];
+      if (year < 100) year += 2000;
+      return new Date(year, month-1, day);
     }
   }
   return null;
 }
 
+// ✅ إصلاح M1: findCol يستخدم المطابقة التامة فقط (بدون includes)
 function findCol(headers, candidates){
   const lower = headers.map(h => String(h).trim().toLowerCase().replace(/\s+/g, ' '));
   for (const c of candidates){
     const t = c.trim().toLowerCase();
-    const idx = lower.findIndex(h => h === t || h.includes(t));
+    const idx = lower.findIndex(h => h === t);
     if (idx !== -1) return headers[idx];
   }
   return null;
@@ -628,7 +632,7 @@ function handleFiles(fileList){
       showMsg('uploadMsg', `ملف غير مدعوم: ${file.name}`, 'error');
       return;
     }
-    // ✅ إصلاح: مقارنة size بـ size بدلاً من rowCount بـ size
+    // ✅ إصلاح: مقارنة size بـ size (بدلاً من rowCount بـ size)
     const isDuplicate = state.files.some(f => f.originalName === file.name && f.size === file.size);
     if (isDuplicate){
       showMsg('uploadMsg', `⚠️ الملف "${file.name}" مرفوع مسبقًا — تم تجاهله`, 'warning');
@@ -703,7 +707,6 @@ function renderFileList(){
     const monthStr = (f.detectedMonth && f.detectedYear) ? `${MONTH_AR[f.detectedMonth-1]} ${f.detectedYear}` : 'غير محدد';
     const div = document.createElement('div');
     div.className = 'file-item';
-    // ✅ إصلاح: استخدام data attribute بدلاً من onclick inline
     div.innerHTML = `
       <div>
         <div class="fname">${escapeHtml(f.originalName)}</div>
@@ -715,13 +718,13 @@ function renderFileList(){
       </div>
       <button type="button" class="fremove" data-id="${f.id}">✕ إزالة</button>
     `;
-    // ✅ إصلاح: استخدام addEventListener بدلاً من onclick
+    // ✅ إصلاح: استخدام addEventListener بدلاً من onclick inline
     div.querySelector('.fremove').addEventListener('click', () => removeFile(f.id));
     c.appendChild(div);
   });
 }
 
-// ✅ إصلاح: دالة محلية بدلاً من window.removeFile
+// ✅ إصلاح: دالة محلية (بدلاً من window.removeFile)
 function removeFile(id){
   state.files = state.files.filter(f => f.id !== id);
   renderFileList();
@@ -745,7 +748,14 @@ document.getElementById('runAnalysisBtn').addEventListener('click', () => {
       renderResults(state.analysis);
       const dateStr = new Date().toISOString().slice(0,10);
       document.getElementById('defaultFilename').value = `تقرير_مبيعات_نون_${dateStr}`;
+      // ✅ إضافة: حفظ آخر تحليل للـ Dashboard
+      saveLastRun('noon', {
+        finalValue: state.analysis.global.finalValue,
+        finalQty: state.analysis.global.finalQty,
+        uniqueProducts: state.analysis.global.uniqueProducts,
+      });
     } catch(err){
+      // ✅ إصلاح: استبدال alert بـ showMsg
       showMsg('uploadMsg', 'خطأ في التحليل: ' + err.message, 'error');
       console.error(err);
     } finally {
@@ -781,7 +791,7 @@ function executeAnalysis(files){
       salesCount:0, salesValue:0,
       returnsCount:0, returnsValue:0,
       feesCount:0, feesValue:0,
-      otherCount:0,
+      otherCount:0,  // ✅ إصلاح C1: إضافة otherCount
       matchedReturnsCount:0, matchedReturnsValue:0,
       unmatchedReturnsCount:0, unmatchedReturnsValue:0,
       finalQty:0, finalValue:0,
@@ -846,7 +856,9 @@ function executeAnalysis(files){
         });
       } else if (cls === 'fee'){
         fees.push(enriched);
-        summary.feesCount++; summary.feesValue += val;
+        summary.feesCount++;
+        summary.feesValue += val;
+        // ✅ إصلاح C2: عد كل fee بدون شرط إضافي
         result.filteredFeesCount++;
         result.filteredFeesValue += val;
         result.traceEntries.push({
@@ -861,6 +873,7 @@ function executeAnalysis(files){
           salesContribution: 0,
         });
       } else {
+        // ✅ إصلاح C1: عد الصفوف other
         summary.otherCount++;
         result.traceEntries.push({
           rowIndex: enriched._globalRow,
@@ -945,7 +958,7 @@ function executeAnalysis(files){
       }
       const pm = p.perMonth.get(summary.month);
       pm.qty_sold++; pm.value_sold += s._val;
-      // ✅ إصلاح: الاحتفاظ بأول وصف فقط بدلاً من دمج لا نهائي
+      // ✅ إصلاح: الاحتفاظ بأول وصف فقط (بدلاً من دمج لا نهائي)
       if (!p.title && s._desc) p.title = s._desc;
     });
 
@@ -1163,7 +1176,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 DOWNLOAD MODAL
 ========================================================================= */
 document.getElementById('downloadBtn').addEventListener('click', () => {
-  if (!state.analysis){ alert('يجب إجراء التحليل أولاً'); return; }
+  if (!state.analysis){
+    showMsg('uploadMsg', 'يجب إجراء التحليل أولاً', 'warning');
+    return;
+  }
   const defaultName = document.getElementById('defaultFilename').value || `تقرير_مبيعات_نون_${new Date().toISOString().slice(0,10)}`;
   document.getElementById('modalFilename').value = defaultName;
   document.getElementById('filenameModal').classList.remove('hidden');
@@ -1426,6 +1442,23 @@ function openInspectPanel(searchKey){
   });
 
   inspectPanelEl.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+/* =========================================================================
+LAST-RUN STORAGE (للـ Dashboard)
+========================================================================= */
+function saveLastRun(platformId, data){
+  try {
+    const key = 'salesAnalyzer_lastRuns';
+    const all = JSON.parse(localStorage.getItem(key) || '{}');
+    all[platformId] = {
+      ...data,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(key, JSON.stringify(all));
+  } catch(err){
+    console.warn('Failed to save last run:', err);
+  }
 }
 </script>
 </body>
